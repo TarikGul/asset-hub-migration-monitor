@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asset Hub Migration Monitor</title>
+    <style>
+        :root {
+            --primary: #E6007A;
+            --primary-light: #ff6eb4;
+            --secondary: #172026;
+            --light-bg: #f5f6fa;
+            --border: #e1e5eb;
+            --success: #46c93a;
+            --warning: #ffb800;
+            --danger: #ff2e2e;
+            --text: #172026;
+            --text-light: #6C7A89;
+            --white: #ffffff;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+        
+        body {
+            background-color: var(--light-bg);
+            color: var(--text);
+        }
+        
+        header {
+            background-color: var(--white);
+            padding: 1.25rem 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .logo img {
+            height: 32px;
+        }
+        
+        .logo h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        
+        .header-info {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+        
+        .timestamp {
+            color: var(--text-light);
+            font-size: 0.875rem;
+        }
+        
+        .refresh-btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        main {
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 1.5rem;
+        }
+        
+        .card {
+            background-color: var(--white);
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+        }
+        
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+        
+        .card-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .migration-status {
+            grid-column: span 8;
+        }
+        
+        .xcm-messages {
+            grid-column: span 4;
+        }
+        
+        .balance-monitor {
+            grid-column: span 6;
+        }
+        
+        .teleportation-status {
+            grid-column: span 6;
+        }
+        
+        .pallet-status {
+            grid-column: span 12;
+        }
+        
+        .alerts {
+            grid-column: span 12;
+        }
+        
+        /* Stage indicator */
+        .stage-display {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .stage-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .stage-description {
+            color: var(--text-light);
+            font-size: 0.875rem;
+        }
+        
+        /* Progress bar */
+        .progress-container {
+            margin-bottom: 1.5rem;
+        }
+        
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+        
+        .progress-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        
+        .progress-value {
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        
+        .progress-bar {
+            height: 8px;
+            width: 100%;
+            background-color: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background-color: var(--primary);
+            border-radius: 4px;
+            width: 45%; /* This would be dynamic in real implementation */
+        }
+        
+        /* Timeline */
+        .timeline {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+            margin-top: 2rem;
+            padding-top: 16px;
+        }
+        
+        .timeline::before {
+            content: '';
+            position: absolute;
+            top: 16px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: var(--border);
+            z-index: 0;
+        }
+        
+        .timeline-point {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .point-marker {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background-color: var(--white);
+            border: 2px solid var(--primary);
+            margin-bottom: 8px;
+        }
+        
+        .point-marker.completed {
+            background-color: var(--primary);
+        }
+        
+        .point-label {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            text-align: center;
+            max-width: 80px;
+        }
+        
+        /* Health indicators */
+        .health-indicators {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .health-indicator {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            border-radius: 6px;
+            background-color: var(--light-bg);
+        }
+        
+        .indicator-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+        
+        .dot-green {
+            background-color: var(--success);
+        }
+        
+        .dot-yellow {
+            background-color: var(--warning);
+        }
+        
+        .dot-red {
+            background-color: var(--danger);
+        }
+        
+        .indicator-label {
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        /* Message metrics */
+        .message-metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .metric {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        
+        .metric-label {
+            font-size: 0.75rem;
+            color: var(--text-light);
+        }
+        
+        .metric-change {
+            font-size: 0.75rem;
+            color: var(--success);
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        
+        /* Charts */
+        .chart-container {
+            width: 100%;
+            height: 150px;
+            margin-top: 1rem;
+            position: relative;
+        }
+        
+        .chart-placeholder {
+            width: 100%;
+            height: 100%;
+            background-color: var(--light-bg);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-light);
+            font-size: 0.875rem;
+        }
+        
+        /* Table */
+        .table-container {
+            overflow-x: auto;
+            margin-top: 1rem;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        thead {
+            background-color: var(--light-bg);
+        }
+        
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.875rem;
+        }
+        
+        th {
+            font-weight: 600;
+            color: var(--text-light);
+        }
+        
+        tbody tr:hover {
+            background-color: var(--light-bg);
+        }
+        
+        /* Status badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .badge-pending {
+            background-color: #f0f0f0;
+            color: var(--text-light);
+        }
+        
+        .badge-ongoing {
+            background-color: #fff5e0;
+            color: #b78105;
+        }
+        
+        .badge-completed {
+            background-color: #e3f9e5;
+            color: #18794e;
+        }
+        
+        /* Balance card */
+        .balance-metrics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        /* Alert card */
+        .alerts-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        
+        .alert-item {
+            display: flex;
+            padding: 0.75rem;
+            border-radius: 6px;
+            background-color: var(--light-bg);
+            border-left: 4px solid var(--warning);
+        }
+        
+        .alert-content {
+            flex: 1;
+        }
+        
+        .alert-title {
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+        
+        .alert-description {
+            font-size: 0.75rem;
+            color: var(--text-light);
+        }
+        
+        .alert-time {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            white-space: nowrap;
+        }
+        
+        .alert-critical {
+            border-color: var(--danger);
+        }
+        
+        /* Search and filter controls */
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+        
+        .search-box {
+            position: relative;
+        }
+        
+        .search-input {
+            padding: 0.5rem 1rem 0.5rem 2.25rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 0.875rem;
+            width: 250px;
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-light);
+        }
+        
+        .filter-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .filter-select {
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 0.875rem;
+            background-color: var(--white);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <img src="https://polkadot.network/assets/img/logo-polkadot.svg" alt="Polkadot Logo">
+            <h1>Asset Hub Migration Monitor</h1>
+        </div>
+        <div class="header-info">
+            <span class="timestamp">Last updated: April 15, 2025 10:32:41 UTC</span>
+            <button class="refresh-btn">
+                <span>Refresh</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M2 12C2 16.4183 5.58172 20 10 20C14.4183 20 18 16.4183 18 12C18 7.58172 14.4183 4 10 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M10 8L6 4L10 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+        </div>
+    </header>
+    
+    <main>
+        <!-- Migration Status Card -->
+        <section class="card migration-status">
+            <div class="card-header">
+                <h2 class="card-title">Migration Status</h2>
+                <div class="card-actions">
+                    <!-- Icons for card actions would go here -->
+                </div>
+            </div>
+            
+            <div class="stage-display">
+                <div class="stage-name">ConvictionVotingMigrationOngoing</div>
+                <div class="stage-description">Currently migrating conviction voting data from Relay Chain to Asset Hub</div>
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-header">
+                    <span class="progress-label">Overall Progress</span>
+                    <span class="progress-value">45%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill"></div>
+                </div>
+            </div>
+            
+            <div class="timeline">
+                <div class="timeline-point">
+                    <div class="point-marker completed"></div>
+                    <div class="point-label">Account Migration</div>
+                </div>
+                <div class="timeline-point">
+                    <div class="point-marker completed"></div>
+                    <div class="point-label">Multisig Migration</div>
+                </div>
+                <div class="timeline-point">
+                    <div class="point-marker completed"></div>
+                    <div class="point-label">Claims Migration</div>
+                </div>
+                <div class="timeline-point">
+                    <div class="point-marker"></div>
+                    <div class="point-label">Conviction Voting</div>
+                </div>
+                <div class="timeline-point">
+                    <div class="point-marker"></div>
+                    <div class="point-label">Treasury</div>
+                </div>
+                <div class="timeline-point">
+                    <div class="point-marker"></div>
+                    <div class="point-label">Complete</div>
+                </div>
+            </div>
+            
+            <div class="health-indicators">
+                <div class="health-indicator">
+                    <div class="indicator-dot dot-green"></div>
+                    <span class="indicator-label">Overall Status</span>
+                </div>
+                <div class="health-indicator">
+                    <div class="indicator-dot dot-yellow"></div>
+                    <span class="indicator-label">XCM Messages</span>
+                </div>
+                <div class="health-indicator">
+                    <div class="indicator-dot dot-green"></div>
+                    <span class="indicator-label">Balance Consistency</span>
+                </div>
+            </div>
+        </section>
+        
+        <!-- XCM Message Metrics -->
+        <section class="card xcm-messages">
+            <div class="card-header">
+                <h2 class="card-title">XCM Message Metrics</h2>
+                <div class="card-actions">
+                    <!-- Icons for card actions would go here -->
+                </div>
+            </div>
+            
+            <div class="message-metrics">
+                <div class="metric">
+                    <div class="metric-value">1,254</div>
+                    <div class="metric-label">Total Messages Sent</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value">1,246</div>
+                    <div class="metric-label">Messages Processed</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value">8</div>
+                    <div class="metric-label">Messages In-Flight</div>
+                    <div class="metric-change">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 20V4M12 4L4 12M12 4L20 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Normal
+                    </div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value">0.6%</div>
+                    <div class="metric-label">Error Rate</div>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <div class="chart-placeholder">
+                    XCM Message Queue Graph
+                </div>
+            </div>
+        </section>
+        
+        <!-- Pallet Migration Status -->
+        <section class="card pallet-status">
+            <div class="card-header">
+                <h2 class="card-title">Per-Pallet Migration Status</h2>
+                <div class="card-actions">
+                    <div class="search-box">
+                        <span class="search-icon">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M15.5 15.5L20 20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                <path d="M10 17C13.866 17 17 13.866 17 10C17 6.13401 13.866 3 10 3C6.13401 3 3 6.13401 3 10C3 13.866 6.13401 17 10 17Z" stroke="currentColor" stroke-width="2"/>
+                            </svg>
+                        </span>
+                        <input type="text" class="search-input" placeholder="Search pallets...">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Pallet Name</th>
+                            <th>Status</th>
+                            <th>Progress</th>
+                            <th>Items Processed</th>
+                            <th>Errors</th>
+                            <th>Time in Stage</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Accounts</td>
+                            <td><span class="badge badge-completed">Completed</span></td>
+                            <td>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 100%"></div>
+                                </div>
+                            </td>
+                            <td>142,876 / 142,876</td>
+                            <td>0</td>
+                            <td>2h 14m</td>
+                        </tr>
+                        <tr>
+                            <td>Multisig</td>
+                            <td><span class="badge badge-completed">Completed</span></td>
+                            <td>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 100%"></div>
+                                </div>
+                            </td>
+                            <td>5,421 / 5,421</td>
+                            <td>3</td>
+                            <td>43m</td>
+                        </tr>
+                        <tr>
+                            <td>Claims</td>
+                            <td><span class="badge badge-completed">Completed</span></td>
+                            <td>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 100%"></div>
+                                </div>
+                            </td>
+                            <td>1,254 / 1,254</td>
+                            <td>0</td>
+                            <td>12m</td>
+                        </tr>
+                        <tr>
+                            <td>Proxy</td>
+                            <td><span class="badge badge-completed">Completed</span></td>
+                            <td>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 100%"></div>
+                                </div>
+                            </td>
+                            <td>8,932 / 8,932</td>
+                            <td>5</td>
+                            <td>38m</td>
+                        </tr>
+                        <tr>
+                            <td>Conviction Voting</td>
+                            <td><span class="badge badge-ongoing">Ongoing</span></td>
+                            <td>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 73%"></div>
+                                </div>
+                            </td>
+                            <td>2,138 / 2,926</td>
+                            <td>0</td>
+                            <td>26m</td>
+                        </tr>
+                        <tr>
+                            <td>Treasury</td>
+                            <td><span class="badge badge-pending">Pending</span></td>
+                            <td>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 0%"></div>
+                                </div>
+                            </td>
+                            <td>0 / 423</td>
+                            <td>0</td>
+                            <td>-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        
+        <!-- Balance Migration Monitor -->
+        <section class="card balance-monitor">
+            <div class="card-header">
+                <h2 class="card-title">Balance Migration Monitor</h2>
+                <div class="card-actions">
+                    <!-- Icons for card actions would go here -->
+                </div>
+            </div>
+            
+            <div class="balance-metrics">
+                <div class="metric">
+                    <div class="metric-value">12.5M</div>
+                    <div class="metric-label">DOT Migrated</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value">1.2M</div>
+                    <div class="metric-label">DOT Kept on RC</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value">142,876</div>
+                    <div class="metric-label">Accounts Migrated</div>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <div class="chart-placeholder">
+                    Balance Migration Rate Graph
+                </div>
+            </div>
+        </section>
+        
+        <!-- Teleportation Status -->
+        <section class="card teleportation-status">
+            <div class="card-header">
+                <h2 class="card-title">Teleportation Status</h2>
+                <div class="card-actions">
+                    <!-- Icons for card actions would go here -->
+                </div>
+            </div>
+            
+            <div class="message-metrics">
+                <div class="metric">
+                    <div class="metric-value">Disabled</div>
+                    <div class="metric-label">Teleportation State</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value">0</div>
+                    <div class="metric-label">CheckingAccount Balance</div>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <div class="chart-placeholder">
+                    Total Issuance Change Graph
+                </div>
+            </div>
+        </section>
+        
+        <!-- Alerts Panel -->
+        <section class="card alerts">
+            <div class="card-header">
+                <h2 class="card-title">Alerts</h2>
+                <div class="card-actions">
+                    <!-- Icons for card actions would go here -->
+                </div>
+            </div>
+            
+            <div class="alerts-list">
+                <div class="alert-item">
+                    <div class="alert-content">
+                        <div class="alert-title">XCM In-Flight Messages Above Threshold</div>
+                        <div class="alert-description">The number of in-flight XCM messages (8) is approaching the warning threshold of 10.</div>
+                    </div>
+                    <div class="alert-time">15m ago</div>
+                </div>
+                <div class="alert-item alert-critical">
+                    <div class="alert-content">
+                        <div class="alert-title">Proxy Migration Errors Detected</div>
+                        <div class="alert-description">5 errors occurred during proxy migration. Manual intervention may be required.</div>
+                    </div>
+                    <div class="alert-time">2h ago</div>
+                </div>
+                <div class="alert-item">
+                    <div class="alert-content">
+                        <div class="alert-title">Multisig Migration Completed</div>
+                        <div class="alert-description">Multisig migration completed successfully with 5,421 items processed.</div>
+                    </div>
+                    <div class="alert-time">5h ago</div>
+                </div>
+            </div>
+        </section>
+    </main>
+</body>
+</html>
