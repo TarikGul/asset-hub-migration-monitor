@@ -8,6 +8,7 @@ let cachedConfig: Config | null = null;
 const loadConfig = (): Config => {
   const assetHubUrl = process.env.ASSET_HUB_URL;
   const relayChainUrl = process.env.RELAY_CHAIN_URL;
+  const port = process.env.PORT || 8080;
 
   if (!assetHubUrl) {
     throw new Error('ASSET_HUB_URL environment variable is required');
@@ -20,6 +21,7 @@ const loadConfig = (): Config => {
   return {
     assetHubUrl,
     relayChainUrl,
+    port: typeof port === 'string' ? parseInt(port, 10) : port,
   };
 };
 
