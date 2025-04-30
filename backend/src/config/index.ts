@@ -3,6 +3,8 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+let cachedConfig: Config | null = null;
+
 const loadConfig = (): Config => {
   const assetHubUrl = process.env.ASSET_HUB_URL;
   const relayChainUrl = process.env.RELAY_CHAIN_URL;
@@ -22,5 +24,8 @@ const loadConfig = (): Config => {
 };
 
 export const getConfig = (): Config => {
-  return loadConfig();
+  if (!cachedConfig) {
+    cachedConfig = loadConfig();
+  }
+  return cachedConfig;
 }; 
