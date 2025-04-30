@@ -17,8 +17,10 @@
     "@libsql/client": "^0.15.4",
     "@libsql/sqlite3": "^0.3.1",
     "@polkadot/api": "^15.9.2",
+    "app-root-path": "^3.1.0",
     "dotenv": "^16.5.0",
-    "drizzle-orm": "^0.29.3"
+    "drizzle-orm": "^0.29.3",
+    "winston": "^3.17.0"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.9",
