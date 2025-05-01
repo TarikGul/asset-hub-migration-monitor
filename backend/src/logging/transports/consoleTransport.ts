@@ -1,11 +1,8 @@
-import dotenv from 'dotenv';
 import { format, transports } from 'winston';
 
+import { getConfig } from '../../config';
 import { nodeUtilFormat, stripTimestamp, timeStamp } from '../transformers';
 import { ITransformableInfo } from '../types';
-
-// TODO: Add log level to config and environment variables
-dotenv.config();
 
 /**
  * Console transport for winston logger.
@@ -33,7 +30,7 @@ export function consoleTransport(): transports.ConsoleTransportInstance {
 	}
 
 	return new transports.Console({
-		level: process.env.LOG_LEVEL || 'info',
+		level: getConfig().logLevel,
 		handleExceptions: true,
 		format: format.combine(...transformers),
 		// Silence using `jest --silent`
