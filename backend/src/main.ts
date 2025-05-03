@@ -1,3 +1,5 @@
+import '@polkadot/api-augment';
+
 import express, { Request, Response } from 'express';
 
 import { getConfig } from './config';
