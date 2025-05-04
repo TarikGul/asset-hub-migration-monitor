@@ -43,6 +43,20 @@ export interface ISanitizedParachainInherentData {
   horizontalMessages: Map<number, IHorizontalMessageInParachain[]>;
 }
 
+export interface ISanitizedParentInherentData {
+  backedCandidates: {
+    candidate: {
+      descriptor: {
+        paraId: number;
+      };
+      commitments: {
+        upwardMessages: string[];
+        horizontalMessages: IHorizontalMessageInRelayChain[];
+      };
+    };
+  }[];
+}
+
 export interface IFrameMethod {
   pallet: string;
   method: string;
@@ -52,7 +66,7 @@ export interface IFrameMethod {
 export interface IExtrinsic {
   method: IFrameMethod;
   args: {
-    data?: ISanitizedParachainInherentData;
+    data?: ISanitizedParachainInherentData | ISanitizedParentInherentData;
     message?: Bytes;
     dest?: { toString: () => string };
   };

@@ -4,6 +4,7 @@ import {
   XcmMessage,
   IExtrinsic,
   ISanitizedParachainInherentData,
+  ISanitizedParentInherentData
 } from '../types/xcm';
 
 export async function decodeXcmMessage(api: ApiPromise, message: string): Promise<string> {
@@ -61,6 +62,32 @@ export async function processExtrinsic(api: ApiPromise, extrinsic: IExtrinsic): 
               sentAt: msg.sentAt,
             });
           }
+        }
+      }
+    }
+  } else if (section === 'paraInherent') {
+    if (method === 'enter') {
+      const data = extrinsic.args.data as ISanitizedParentInherentData;
+      // Process upward messages
+      for (const candidate of data.backedCandidates) {
+        const paraId = candidate.candidate.descriptor.paraId;
+        for (const msg of candidate.candidate.commitments.upwardMessages) {
+          const decoded = await decodeXcmMessage(api, msg);
+          messages.push({
+            type: 'upward',
+            data: decoded,
+            originParaId: paraId.toString(),
+          });
+        }
+        // Process horizontal messages
+        for (const msg of candidate.candidate.commitments.horizontalMessages) {
+          const decoded = await decodeXcmMessage(api, msg.data);
+          messages.push({
+            type: 'horizontal',
+            data: decoded,
+            originParaId: paraId.toString(),
+            destinationParaId: msg.destinationParaId,
+          });
         }
       }
     }
