@@ -2,11 +2,14 @@ import type { Bytes } from '@polkadot/types';
 import type { GenericExtrinsic } from '@polkadot/types';
 
 export interface XcmMessage {
-  type: 'horizontal' | 'upward' | 'downward';
+  type: 'upward' | 'downward' | 'horizontal';
   data: string;
-  originParaId?: string;
-  destinationParaId?: string;
-  sentAt?: number;
+  metadata: {
+    paraId?: string;
+    originParaId?: string;
+    destinationParaId?: string;
+    sentAt?: number;
+  };
 }
 
 export interface IDownwardMessage {
@@ -39,22 +42,44 @@ export interface IMessages {
 }
 
 export interface ISanitizedParachainInherentData {
-  downwardMessages: IDownwardMessage[];
-  horizontalMessages: Map<number, IHorizontalMessageInParachain[]>;
+  downwardMessages: Array<{
+    msg: string;
+    sentAt: number;
+  }>;
+  horizontalMessages: Map<number, Array<{
+    data: string;
+    sentAt: number;
+  }>>;
+  [key: string]: any;
+}
+
+export interface ISanitizedBackedCandidateCommitments {
+  upwardMessages: string[];
+  horizontalMessages: Array<{
+    data: string;
+    recipient: string | number;
+  }>;
+  newValidationCode: string | null;
+  headData: string;
+  processedDownwardMessages: number;
+  hrmpWatermark: number;
+}
+
+export interface ISanitizedBackedCandidate {
+  candidate: {
+    descriptor: {
+      paraId: string | number;
+      [key: string]: any;
+    };
+    commitments: ISanitizedBackedCandidateCommitments;
+    [key: string]: any;
+  };
+  [key: string]: any;
 }
 
 export interface ISanitizedParentInherentData {
-  backedCandidates: {
-    candidate: {
-      descriptor: {
-        paraId: number;
-      };
-      commitments: {
-        upwardMessages: string[];
-        horizontalMessages: IHorizontalMessageInRelayChain[];
-      };
-    };
-  }[];
+  backedCandidates: ISanitizedBackedCandidate[];
+  [key: string]: any;
 }
 
 export interface IFrameMethod {
@@ -63,11 +88,30 @@ export interface IFrameMethod {
   section: string;
 }
 
+export interface XcmV4Interior {
+  x1?: Array<{
+    parachain?: number;
+    accountId32?: {
+      network?: string | null;
+      id: string;
+    };
+  }>;
+}
+
+export interface XcmV4Destination {
+  v4: {
+    parents: number;
+    interior: XcmV4Interior;
+  };
+}
+
 export interface IExtrinsic {
-  method: IFrameMethod;
+  method: {
+    method: string;
+    section: string;
+  };
   args: {
-    data?: ISanitizedParachainInherentData | ISanitizedParentInherentData;
-    message?: Bytes;
-    dest?: { toString: () => string };
+    data?: ISanitizedParentInherentData | ISanitizedParachainInherentData;
+    [key: string]: any;
   };
 } 
