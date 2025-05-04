@@ -7,7 +7,9 @@
     "start": "node build/index.js",
     "dev": "ts-node-dev --respawn src/index.ts",
     "migrate": "drizzle-kit generate:sqlite",
-    "push": "drizzle-kit push:sqlite"
+    "push": "drizzle-kit push:sqlite",
+    "test:services": "ts-node scripts/testServices.ts",
+    "test:block": "ts-node scripts/testBlock.ts"
   },
   "keywords": [],
   "author": "",
@@ -28,6 +30,7 @@
     "@types/better-sqlite3": "^7.6.9",
     "@types/node": "^20.11.24",
     "drizzle-kit": "^0.20.14",
+    "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.3.3"
   },

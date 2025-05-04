@@ -1469,6 +1469,7 @@ __metadata:
     drizzle-kit: "npm:^0.20.14"
     drizzle-orm: "npm:^0.29.3"
     express: "npm:^5.1.0"
+    ts-node: "npm:^10.9.2"
     ts-node-dev: "npm:^2.0.0"
     typescript: "npm:^5.3.3"
     winston: "npm:^3.17.0"
@@ -4059,7 +4060,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ts-node@npm:^10.4.0":
+"ts-node@npm:^10.4.0, ts-node@npm:^10.9.2":
   version: 10.9.2
   resolution: "ts-node@npm:10.9.2"
   dependencies:
