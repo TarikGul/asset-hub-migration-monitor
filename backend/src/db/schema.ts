@@ -1,15 +1,18 @@
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { sql } from 'drizzle-orm';
+import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 // Migration Stages
 export const migrationStages = sqliteTable('migration_stages', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  stageName: text('stage_name').notNull(),
-  status: text('status', { enum: ['pending', 'ongoing', 'completed', 'failed'] }).notNull(),
-  startedAt: integer('started_at', { mode: 'timestamp' }).notNull(),
-  completedAt: integer('completed_at', { mode: 'timestamp' }),
-  errorCount: integer('error_count').notNull().default(0),
-  lastUpdated: integer('last_updated', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+  stage: text('stage').notNull(),
+  details: text('details'), // JSON stringified details about the stage
+  blockNumber: integer('block_number').notNull(),
+  blockHash: text('block_hash').notNull(),
+  timestamp: integer('timestamp', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`),
 });
+
+export type MigrationStage = typeof migrationStages.$inferSelect;
+export type NewMigrationStage = typeof migrationStages.$inferInsert;
 
 // XCM Message Counters
 export const xcmMessageCounters = sqliteTable('xcm_message_counters', {

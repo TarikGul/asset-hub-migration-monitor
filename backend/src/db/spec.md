@@ -6,12 +6,11 @@
 ```typescript
 migration_stages {
   id: number (PK)
-  stage_name: string
-  status: enum('pending', 'ongoing', 'completed', 'failed')
-  started_at: timestamp
-  completed_at: timestamp
-  error_count: number
-  last_updated: timestamp
+  stage: string
+  details: string (JSON) // Stores complete stage information including variant data
+  block_number: number
+  block_hash: string
+  timestamp: timestamp
 }
 ```
 
@@ -74,8 +73,9 @@ pallet_migration_counters {
 ## Indexes
 
 1. `migration_stages`
-   - Index on `status`
-   - Index on `started_at`
+   - Index on `stage`
+   - Index on `block_number`
+   - Index on `timestamp`
 
 2. `xcm_message_counters`
    - Index on `source_chain`
@@ -97,6 +97,9 @@ pallet_migration_counters {
 
 1. All timestamps should be stored in UTC
 2. All monetary values should be stored as integers (smallest unit)
-3. Status enums should be consistent across tables
+3. The `details` field in migration_stages stores the complete stage information as JSON, including:
+   - Stage variant data (e.g., next_key for StakingMigrationOngoing)
+   - Additional context about the stage
+   - Any relevant metadata
 4. Consider adding soft delete functionality if needed
 5. Counters should be updated atomically to ensure consistency 
