@@ -1,5 +1,8 @@
+import type { PalletRcMigratorMigrationStage } from '../types/pjs';
+
 import { abstractApi } from './abstractApi';
 import { processBlock } from './xcmProcessing';
+
 
 export async function runRelayChainService() {
   const api = await abstractApi('relay-chain');
@@ -28,7 +31,12 @@ export async function runRelayChainService() {
     }
   });
 
+  const unsubscribeMigrationStage = await api.query.rcMigrator.migrationStage((migrationStage: PalletRcMigratorMigrationStage) => {
+    
+  });
+
   return {
-    unsubscribe
+    unsubscribe,
+    unsubscribeMigrationStage
   };
 } 
