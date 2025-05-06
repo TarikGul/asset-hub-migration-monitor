@@ -1,8 +1,12 @@
 import type { PalletRcMigratorMigrationStage } from '../types/pjs';
-
+import { db } from '../db';
+import { migrationStages } from '../db/schema';
 import { abstractApi } from './abstractApi';
 import { processBlock } from './xcmProcessing';
+import { EventEmitter } from 'events';
 
+// Create an event emitter for SSE
+export const migrationEvents = new EventEmitter();
 
 export async function runRelayChainService() {
   const api = await abstractApi('relay-chain');
@@ -31,8 +35,32 @@ export async function runRelayChainService() {
     }
   });
 
-  const unsubscribeMigrationStage = await api.query.rcMigrator.migrationStage((migrationStage: PalletRcMigratorMigrationStage) => {
-    
+  const unsubscribeMigrationStage = await api.query.rcMigrator.migrationStage(async (migrationStage: PalletRcMigratorMigrationStage) => {
+    try {
+      const header = await api.rpc.chain.getHeader();
+      
+      await db.insert(migrationStages).values({
+        stage: migrationStage.type,
+        details: JSON.stringify(migrationStage.toJSON()),
+        blockNumber: header.number.toNumber(),
+        blockHash: header.hash.toHex(),
+      });
+      
+      migrationEvents.emit('stageUpdate', {
+        stage: migrationStage.type,
+        details: migrationStage.toJSON(),
+        blockNumber: header.number.toNumber(),
+        blockHash: header.hash.toHex(),
+        timestamp: new Date().toISOString(),
+      });
+
+      console.log('Migration stage updated:', {
+        stage: migrationStage.type,
+        blockNumber: header.number.toNumber(),
+      });
+    } catch (error) {
+      console.error('Error processing migration stage:', error);
+    }
   });
 
   return {
