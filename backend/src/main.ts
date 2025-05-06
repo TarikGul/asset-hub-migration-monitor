@@ -1,5 +1,7 @@
 import '@polkadot/api-augment';
 
+import type { VoidFn } from '@polkadot/api/types';
+
 import express, { Request, Response } from 'express';
 import { runRelayChainService, migrationEvents } from './services/rcService';
 
@@ -41,11 +43,43 @@ app.get('/api/migration-stages', (req, res) => {
 });
 
 // Start server
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`Server running on port ${port}`);
   console.log('Connected to:', {
     assetHub: getConfig().assetHubUrl,
     relayChain: getConfig().relayChainUrl,
   });
-  runRelayChainService().catch(console.error);
+});
+
+let cleanup: { unsubscribe: VoidFn; unsubscribeMigrationStage: VoidFn } | null = null;
+
+runRelayChainService()
+  .then((result) => {
+    cleanup = result;
+  })
+  .catch(console.error);
+
+// Handle termination signals
+const signals = ['SIGINT', 'SIGTERM', 'SIGQUIT'] as const;
+signals.forEach((signal) => {
+  process.on(signal, async () => {
+    console.log(`\nReceived ${signal}. Starting graceful shutdown...`);
+
+    if (cleanup) {
+      console.log('Cleaning up subscriptions...');
+      cleanup.unsubscribe();
+      cleanup.unsubscribeMigrationStage();
+    }
+
+    server.close(() => {
+      console.log('Server closed. Exiting...');
+      process.exit(0);
+    });
+
+    // Force exit after 5 seconds if cleanup takes too long
+    setTimeout(() => {
+      console.error('Forced exit after timeout');
+      process.exit(1);
+    }, 5000);
+  });
 });

@@ -4,6 +4,7 @@ import { migrationStages } from '../db/schema';
 import { abstractApi } from './abstractApi';
 import { processBlock } from './xcmProcessing';
 import { EventEmitter } from 'events';
+import { VoidFn } from '@polkadot/api/types';
 
 // Create an event emitter for SSE
 export const migrationEvents = new EventEmitter();
@@ -45,7 +46,7 @@ export async function runRelayChainService() {
         blockNumber: header.number.toNumber(),
         blockHash: header.hash.toHex(),
       });
-      
+
       migrationEvents.emit('stageUpdate', {
         stage: migrationStage.type,
         details: migrationStage.toJSON(),
@@ -61,7 +62,7 @@ export async function runRelayChainService() {
     } catch (error) {
       console.error('Error processing migration stage:', error);
     }
-  });
+  }) as unknown as VoidFn;
 
   return {
     unsubscribe,
