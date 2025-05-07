@@ -1,11 +1,11 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "main": "build/index.js",
+  "main": "build/main.js",
   "scripts": {
     "build": "tsc",
-    "start": "node build/index.js",
-    "dev": "ts-node-dev --respawn src/index.ts",
+    "start": "node build/main.js",
+    "dev": "ts-node-dev --respawn src/main.ts",
     "migrate": "drizzle-kit generate:sqlite",
     "push": "drizzle-kit push:sqlite",
     "test:services": "ts-node scripts/testServices.ts",
