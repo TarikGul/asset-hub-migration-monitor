@@ -8,5 +8,4 @@ const client = createClient({
 
 export const db = drizzle(client, { schema });
 
-// Export the schema for use in other files
 export { schema }; 

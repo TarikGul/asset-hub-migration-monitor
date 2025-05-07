@@ -41,6 +41,7 @@ export async function runRcMigrationStageService(): Promise<VoidFn> {
 
   const unsubscribeMigrationStage = await api.query.rcMigrator.rcMigrationStage(async (migrationStage: PalletRcMigratorMigrationStage) => {
     try {
+      // TODO: Technically we want to confirm this is the block that has the proper migration stage in the events
       const header = await api.rpc.chain.getHeader();
       
       await db.insert(migrationStages).values({
