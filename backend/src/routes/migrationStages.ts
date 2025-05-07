@@ -1,7 +1,10 @@
 import { RequestHandler } from 'express';
 import { eventService } from '../services/eventService';
+import { db } from '../db';
+import { migrationStages } from '../db/schema';
+import { desc } from 'drizzle-orm';
 
-export const migrationStagesHandler: RequestHandler = (req, res) => {
+export const migrationStagesHandler: RequestHandler = async (req, res) => {
   console.log('New SSE connection established');
   
   res.setHeader('Content-Type', 'text/event-stream');
@@ -9,7 +12,23 @@ export const migrationStagesHandler: RequestHandler = (req, res) => {
   res.setHeader('Connection', 'keep-alive');
 
   try {
-    res.write('event: connected\ndata: connected\n\n');
+    // Get the latest migration stage from the database
+    const latestStage = await db.query.migrationStages.findFirst({
+      orderBy: [desc(migrationStages.timestamp)],
+    });
+
+    const initialData = {
+      type: 'connected',
+      latestStage: latestStage ? {
+        stage: latestStage.stage,
+        details: latestStage.details ? JSON.parse(latestStage.details) : null,
+        blockNumber: latestStage.blockNumber,
+        blockHash: latestStage.blockHash,
+        timestamp: latestStage.timestamp,
+      } : null,
+    };
+
+    res.write(`event: connected\ndata: ${JSON.stringify(initialData)}\n\n`);
   } catch (error) {
     console.error('Error sending initial connection message:', error);
     res.end();
