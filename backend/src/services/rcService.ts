@@ -1,13 +1,13 @@
 import type { PalletRcMigratorMigrationStage } from '../types/pjs';
 import { db } from '../db';
 import { migrationStages } from '../db/schema';
-import { abstractApi } from './abstractApi';
+import { AbstractApi } from './abstractApi';
 import { processBlock } from './xcmProcessing';
 import { VoidFn } from '@polkadot/api/types';
 import { eventService } from './eventService';
 
-export async function runRcHeadsService() {
-  const api = await abstractApi('relay-chain');
+export async function runRcHeadsService(): Promise<VoidFn> {
+  const api = await AbstractApi.getInstance().getRelayChainApi();
 
   const unsubscribeHeads = await api.rpc.chain.subscribeFinalizedHeads(async (header) => {
     console.log(`New block #${header.number} detected, fetching complete block...`);
@@ -36,8 +36,8 @@ export async function runRcHeadsService() {
   return unsubscribeHeads;
 }
 
-export async function runRcMigrationStageService() {
-  const api = await abstractApi('relay-chain');
+export async function runRcMigrationStageService(): Promise<VoidFn> {
+  const api = await AbstractApi.getInstance().getRelayChainApi();
 
   const unsubscribeMigrationStage = await api.query.rcMigrator.rcMigrationStage(async (migrationStage: PalletRcMigratorMigrationStage) => {
     try {
@@ -67,5 +67,5 @@ export async function runRcMigrationStageService() {
     }
   }) as unknown as VoidFn;
 
-  return unsubscribeMigrationStage
+  return unsubscribeMigrationStage;
 }

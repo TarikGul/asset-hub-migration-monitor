@@ -1,8 +1,8 @@
-import { abstractApi } from './abstractApi';
+import { AbstractApi } from './abstractApi';
 import { processBlock } from './xcmProcessing';
 
 export async function runAssetHubService() {
-  const api = await abstractApi('asset-hub');
+  const api = await AbstractApi.getInstance().getAssetHubApi();
 
   const unsubscribe = await api.rpc.chain.subscribeFinalizedHeads(async (header) => {
     console.log(`New block #${header.number} detected, fetching complete block...`);
