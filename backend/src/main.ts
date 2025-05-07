@@ -5,6 +5,7 @@ import type { VoidFn } from '@polkadot/api/types';
 import express, { Request, Response } from 'express';
 import { runRcHeadsService, runRcMigrationStageService } from './services/rcService';
 import { migrationStagesHandler } from './routes/migrationStages';
+import { eventService } from './services/eventService';
 
 import { getConfig } from './config';
 
@@ -25,21 +26,35 @@ const server = app.listen(port, () => {
   });
 });
 
-
 let cleanupMigrationStage: VoidFn | null = null;
 let cleanupHeads: VoidFn | null = null;
 
+// Start the migration stage service
 runRcMigrationStageService()
   .then((result) => {
     cleanupMigrationStage = result;
   })
   .catch(console.error);
 
-runRcHeadsService()
-  .then((result) => {
-    cleanupHeads = result;
-  })
-  .catch(console.error);
+// Listen for the migrationScheduled event
+eventService.on('migrationScheduled', async (data) => {
+  console.log('Migration scheduled event received:', data);
+  
+  // Clean up existing heads subscription if it exists
+  if (cleanupHeads) {
+    console.log('Cleaning up existing heads subscription...');
+    cleanupHeads();
+    cleanupHeads = null;
+  }
+
+  // Start new heads service with the scheduled block number
+  try {
+    cleanupHeads = await runRcHeadsService(data.scheduledBlock);
+    console.log(`Started monitoring heads for scheduled block #${data.scheduledBlock}`);
+  } catch (error) {
+    console.error('Error starting heads service:', error);
+  }
+});
 
 // Handle termination signals
 const signals = ['SIGINT', 'SIGTERM', 'SIGQUIT'] as const;
