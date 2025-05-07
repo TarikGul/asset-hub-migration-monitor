@@ -113,6 +113,7 @@ export async function processExtrinsic(api: ApiPromise, extrinsic: IExtrinsic): 
         }
       }
 
+      // TODO: We dont need to retrieve horizontal messages for the AHM
       if (data.horizontalMessages && data.horizontalMessages instanceof Map) {
         for (const [paraId, msgs] of data.horizontalMessages.entries()) {
           for (const msg of msgs) {
