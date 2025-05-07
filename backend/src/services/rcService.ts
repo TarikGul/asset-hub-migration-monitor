@@ -3,11 +3,8 @@ import { db } from '../db';
 import { migrationStages } from '../db/schema';
 import { abstractApi } from './abstractApi';
 import { processBlock } from './xcmProcessing';
-import { EventEmitter } from 'events';
 import { VoidFn } from '@polkadot/api/types';
-
-// Create an event emitter for SSE
-export const migrationEvents = new EventEmitter();
+import { eventService } from './eventService';
 
 export async function runRelayChainService() {
   const api = await abstractApi('relay-chain');
@@ -36,7 +33,7 @@ export async function runRelayChainService() {
     }
   });
 
-  const unsubscribeMigrationStage = await api.query.rcMigrator.migrationStage(async (migrationStage: PalletRcMigratorMigrationStage) => {
+  const unsubscribeMigrationStage = await api.query.rcMigrator.rcMigrationStage(async (migrationStage: PalletRcMigratorMigrationStage) => {
     try {
       const header = await api.rpc.chain.getHeader();
       
@@ -47,7 +44,7 @@ export async function runRelayChainService() {
         blockHash: header.hash.toHex(),
       });
 
-      migrationEvents.emit('stageUpdate', {
+      eventService.emit('stageUpdate', {
         stage: migrationStage.type,
         details: migrationStage.toJSON(),
         blockNumber: header.number.toNumber(),
