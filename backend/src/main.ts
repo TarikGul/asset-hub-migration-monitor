@@ -3,7 +3,7 @@ import '@polkadot/api-augment';
 import type { VoidFn } from '@polkadot/api/types';
 
 import express, { Request, Response } from 'express';
-import { runRelayChainService } from './services/rcService';
+import { runRcHeadsService, runRcMigrationStageService } from './services/rcService';
 import { migrationStagesHandler } from './routes/migrationStages';
 
 import { getConfig } from './config';
@@ -26,11 +26,18 @@ const server = app.listen(port, () => {
 });
 
 
-let cleanup: { unsubscribe: VoidFn; unsubscribeMigrationStage: VoidFn } | null = null;
+let cleanupMigrationStage: VoidFn | null = null;
+let cleanupHeads: VoidFn | null = null;
 
-runRelayChainService()
+runRcMigrationStageService()
   .then((result) => {
-    cleanup = result;
+    cleanupMigrationStage = result;
+  })
+  .catch(console.error);
+
+runRcHeadsService()
+  .then((result) => {
+    cleanupHeads = result;
   })
   .catch(console.error);
 
@@ -40,11 +47,15 @@ signals.forEach((signal) => {
   process.on(signal, async () => {
     console.log(`\nReceived ${signal}. Starting graceful shutdown...`);
 
-    if (cleanup) {
-      console.log('Cleaning up subscriptions...');
-      cleanup.unsubscribe();
-      cleanup.unsubscribeMigrationStage();
+    if (cleanupMigrationStage) {
+      console.log('Cleaning up migration stage subscription...');
+      cleanupMigrationStage();
     }
+
+    if (cleanupHeads) {
+      console.log('Cleaning up heads subscription...');
+      cleanupHeads();
+    } 
 
     server.close(() => {
       console.log('Server closed. Exiting...');

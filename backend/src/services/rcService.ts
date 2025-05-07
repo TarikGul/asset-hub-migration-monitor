@@ -6,10 +6,10 @@ import { processBlock } from './xcmProcessing';
 import { VoidFn } from '@polkadot/api/types';
 import { eventService } from './eventService';
 
-export async function runRelayChainService() {
+export async function runRcHeadsService() {
   const api = await abstractApi('relay-chain');
 
-  const unsubscribe = await api.rpc.chain.subscribeFinalizedHeads(async (header) => {
+  const unsubscribeHeads = await api.rpc.chain.subscribeFinalizedHeads(async (header) => {
     console.log(`New block #${header.number} detected, fetching complete block...`);
 
     try {
@@ -32,6 +32,12 @@ export async function runRelayChainService() {
       console.error(`Error processing block: ${error}`);
     }
   });
+
+  return unsubscribeHeads;
+}
+
+export async function runRcMigrationStageService() {
+  const api = await abstractApi('relay-chain');
 
   const unsubscribeMigrationStage = await api.query.rcMigrator.rcMigrationStage(async (migrationStage: PalletRcMigratorMigrationStage) => {
     try {
@@ -61,8 +67,5 @@ export async function runRelayChainService() {
     }
   }) as unknown as VoidFn;
 
-  return {
-    unsubscribe,
-    unsubscribeMigrationStage
-  };
-} 
+  return unsubscribeMigrationStage
+}
