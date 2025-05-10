@@ -3,6 +3,7 @@ import '@polkadot/api-augment';
 import type { VoidFn } from '@polkadot/api/types';
 
 import express, { Request, Response } from 'express';
+import cors from 'cors';
 import { runRcHeadsService, runRcMigrationStageService } from './services/rcService';
 import { migrationStagesHandler } from './routes/migrationStages';
 import { eventService } from './services/eventService';
@@ -11,6 +12,14 @@ import { getConfig } from './config';
 
 const app = express();
 const port = getConfig().port;
+
+// Enable CORS for all routes
+app.use(cors({
+  origin: 'http://localhost:3000',
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type'],
+  credentials: true
+}));
 
 app.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok' });
