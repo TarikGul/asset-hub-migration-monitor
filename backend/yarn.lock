@@ -1214,6 +1214,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/cors@npm:^2.8.18":
+  version: 2.8.18
+  resolution: "@types/cors@npm:2.8.18"
+  dependencies:
+    "@types/node": "npm:*"
+  checksum: 10/6e49b741345e67834cd19d766228509e4b37d6d5c272355bb059502b4787f5adf58776d9114ac5f0f407966e0347ae8d1f995d7ea41e6a24f716d36b3010401b
+  languageName: node
+  linkType: hard
+
 "@types/express-serve-static-core@npm:^5.0.0":
   version: 5.0.6
   resolution: "@types/express-serve-static-core@npm:5.0.6"
@@ -1462,9 +1471,11 @@ __metadata:
     "@libsql/sqlite3": "npm:^0.3.1"
     "@polkadot/api": "npm:^15.9.2"
     "@types/better-sqlite3": "npm:^7.6.9"
+    "@types/cors": "npm:^2.8.18"
     "@types/express": "npm:^5.0.1"
     "@types/node": "npm:^20.11.24"
     app-root-path: "npm:^3.1.0"
+    cors: "npm:^2.8.5"
     dotenv: "npm:^16.5.0"
     drizzle-kit: "npm:^0.20.14"
     drizzle-orm: "npm:^0.29.3"
@@ -1770,6 +1781,16 @@ __metadata:
   dependencies:
     is-what: "npm:^4.1.8"
   checksum: 10/4c41385a94a1cff6352a954f9b1c05b6bb1b70713a2d31f4c7b188ae7187ce00ddcc9c09bd58d24cd35b67fc6dd84df5954c0be86ea10700ff74e677db3cb09c
+  languageName: node
+  linkType: hard
+
+"cors@npm:^2.8.5":
+  version: 2.8.5
+  resolution: "cors@npm:2.8.5"
+  dependencies:
+    object-assign: "npm:^4"
+    vary: "npm:^1"
+  checksum: 10/66e88e08edee7cbce9d92b4d28a2028c88772a4c73e02f143ed8ca76789f9b59444eed6b1c167139e76fa662998c151322720093ba229f9941365ada5a6fc2c6
   languageName: node
   linkType: hard
 
@@ -3359,6 +3380,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"object-assign@npm:^4":
+  version: 4.1.1
+  resolution: "object-assign@npm:4.1.1"
+  checksum: 10/fcc6e4ea8c7fe48abfbb552578b1c53e0d194086e2e6bbbf59e0a536381a292f39943c6e9628af05b5528aa5e3318bb30d6b2e53cadaf5b8fe9e12c4b69af23f
+  languageName: node
+  linkType: hard
+
 "object-inspect@npm:^1.13.3":
   version: 1.13.4
   resolution: "object-inspect@npm:1.13.4"
@@ -4208,7 +4236,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vary@npm:^1.1.2":
+"vary@npm:^1, vary@npm:^1.1.2":
   version: 1.1.2
   resolution: "vary@npm:1.1.2"
   checksum: 10/31389debef15a480849b8331b220782230b9815a8e0dbb7b9a8369559aed2e9a7800cd904d4371ea74f4c3527db456dc8e7ac5befce5f0d289014dbdf47b2242
