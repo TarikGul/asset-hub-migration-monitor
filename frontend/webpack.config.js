@@ -39,20 +39,14 @@ module.exports = {
     }),
   ],
   devServer: {
-    historyApiFallback: true,
     port: 3000,
     hot: true,
+    open: true,
     proxy: [{
       context: ['/'],
-      target: 'http://localhost:8080',
-      secure: false,
-      changeOrigin: true,
-      bypass: (req) => {
-        // Don't proxy requests for static assets
-        if (req.url.match(/\.(js|css|html|png|jpg|jpeg|gif|ico|svg)$/)) {
-          return req.url;
-        }
-      },
-    }],
+      target: 'http://localhost:3000',
+      router: () => 'http://localhost:8080',
+      logLevel: 'debug'
+    }]
   },
 }; 
