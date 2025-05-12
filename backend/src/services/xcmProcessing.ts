@@ -1,17 +1,22 @@
 import { ApiPromise } from '@polkadot/api';
 import type { Block } from '@polkadot/types/interfaces';
+import type { GenericExtrinsic } from '@polkadot/types';
+import type { AnyTuple, Codec, Registry } from '@polkadot/types/types';
+import { GenericCall, Struct } from '@polkadot/types';
+import { Log } from '../logging/Log';
 import {
   XcmMessage,
-  IExtrinsic,
   ISanitizedParachainInherentData,
   ISanitizedParentInherentData
 } from '../types/xcm';
-import { Log } from '../logging/Log';
 
+const { logger } = Log;
+
+/**
+ * Decode XCM message into a human-readable format
+ */
 export async function decodeXcmMessage(api: ApiPromise, message: any): Promise<string> {
-  const { logger } = Log;
   try {
-    // If the message is a string, try to decode it directly
     if (typeof message === 'string') {
       const instructions = [];
       let xcmMessage = message;
@@ -26,13 +31,11 @@ export async function decodeXcmMessage(api: ApiPromise, message: any): Promise<s
       return JSON.stringify(instructions, null, 2);
     }
     
-    // If it's an object with a v4 field, it's likely a versioned XCM message
     if (message?.v4) {
       const xcmInstructions = api.createType('XcmVersionedXcm', message);
       return xcmInstructions.toString();
     }
 
-    // If it's an array of assets or other XCM-related data, stringify it
     return JSON.stringify(message, null, 2);
   } catch (error) {
     logger.error('Error decoding XCM message:', error);
@@ -40,6 +43,9 @@ export async function decodeXcmMessage(api: ApiPromise, message: any): Promise<s
   }
 }
 
+/**
+ * Process upward messages from a parachain
+ */
 async function processUpwardMessages(
   api: ApiPromise,
   messages: XcmMessage[],
@@ -48,7 +54,7 @@ async function processUpwardMessages(
 ): Promise<void> {
   for (const msg of upwardMessages) {
     if (msg) {
-      // Check if we already have a message from this parachain
+      // Skip if we already have a message from this parachain
       const lastMessage = messages[messages.length - 1];
       if (lastMessage?.type === 'upward' && lastMessage.metadata.originParaId === paraId) {
         continue;
@@ -66,26 +72,45 @@ async function processUpwardMessages(
   }
 }
 
-// TODO: We dont need to retrieve horizontal messages for the AHM
-export async function processExtrinsic(api: ApiPromise, extrinsic: IExtrinsic): Promise<XcmMessage[]> {
-  const { logger } = Log;
+/**
+ * Parse a GenericCall to get its arguments with proper types
+ */
+function parseGenericCall(genericCall: GenericCall, registry: Registry): Record<string, unknown> {
+  const newArgs: Record<string, unknown> = {};
+  const callArgs = genericCall.get('args') as Struct;
+
+  if (callArgs?.defKeys) {
+    for (const paramName of callArgs.defKeys) {
+      newArgs[paramName] = callArgs.get(paramName);
+    }
+  }
+
+  return newArgs;
+}
+
+/**
+ * Process a single extrinsic for XCM messages
+ */
+export async function processExtrinsic(api: ApiPromise, extrinsic: GenericExtrinsic<AnyTuple>): Promise<XcmMessage[]> {
   const messages: XcmMessage[] = [];
   const { method: { method, section } } = extrinsic;
 
-  // Handle different types of XCM messages
+  logger.info(`Processing extrinsic: ${section}.${method}`);
+
+  // Parse the extrinsic args
+  const call = api.registry.createType('Call', extrinsic.method);
+  const parsedArgs = parseGenericCall(call, api.registry);
+
+  // Handle XCM pallet extrinsics
   if (section === 'polkadotXcm' || section === 'xcmPallet') {
-    // For XCM transfer methods, we want to capture the destination and assets
-    const decoded = await decodeXcmMessage(api, extrinsic.args);
+    logger.info(`Found XCM pallet extrinsic: ${section}.${method}`);
+    const decoded = await decodeXcmMessage(api, parsedArgs);
     let destinationParaId: string | undefined;
     
-    // Safely extract parachain ID from the destination
     try {
-      const dest = extrinsic.args.dest;
-      if (dest && typeof dest === 'object' && 'v4' in dest) {
-        const parachain = dest.v4?.interior?.x1?.[0]?.parachain;
-        if (parachain) {
-          destinationParaId = parachain.toString();
-        }
+      const dest = parsedArgs.dest as { v4?: { interior?: { x1?: Array<{ parachain?: any }> } } };
+      if (dest?.v4?.interior?.x1?.[0]?.parachain) {
+        destinationParaId = dest.v4.interior.x1[0].parachain.toString();
       }
     } catch (error) {
       logger.error('Error extracting destination paraId:', error);
@@ -94,85 +119,83 @@ export async function processExtrinsic(api: ApiPromise, extrinsic: IExtrinsic): 
     messages.push({
       type: 'horizontal',
       data: decoded,
-      metadata: {
-        destinationParaId
-      }
+      metadata: { destinationParaId }
     });
-  } else if (section === 'parachainSystem') {
-    if (method === 'setValidationData' && extrinsic.args.data) {
-      const data = extrinsic.args.data as ISanitizedParachainInherentData;
-      
-      if (Array.isArray(data.downwardMessages)) {
-        for (const msg of data.downwardMessages) {
-          if (msg?.msg) {
-            const decoded = await decodeXcmMessage(api, msg.msg);
+  }
+
+  // Handle setValidationData extrinsic
+  if (method === 'setValidationData' && parsedArgs.data) {
+    const data = parsedArgs.data as ISanitizedParachainInherentData;
+    
+    if (Array.isArray(data.downwardMessages)) {
+      logger.info(`Found ${data.downwardMessages.length} downward messages`);
+      for (const msg of data.downwardMessages) {
+        if (msg?.msg) {
+          const decoded = await decodeXcmMessage(api, msg.msg);
+          messages.push({
+            type: 'downward',
+            data: decoded,
+            metadata: { sentAt: msg.sentAt }
+          });
+        }
+      }
+    }
+
+    if (data.horizontalMessages instanceof Map) {
+      logger.info(`Found horizontal messages from ${data.horizontalMessages.size} parachains`);
+      for (const [paraId, msgs] of data.horizontalMessages.entries()) {
+        for (const msg of msgs) {
+          if (msg?.data) {
+            const decoded = await decodeXcmMessage(api, msg.data.slice(1));
             messages.push({
-              type: 'downward',
+              type: 'horizontal',
               data: decoded,
               metadata: {
+                originParaId: paraId.toString(),
                 sentAt: msg.sentAt
               }
             });
           }
         }
       }
+    }
+  }
 
-      if (data.horizontalMessages && data.horizontalMessages instanceof Map) {
-        for (const [paraId, msgs] of data.horizontalMessages.entries()) {
-          for (const msg of msgs) {
+  // Handle enter extrinsic
+  if (method === 'enter' && parsedArgs.data) {
+    const data = parsedArgs.data as ISanitizedParentInherentData;
+    
+    if (data?.backedCandidates) {
+      logger.info(`Found ${data.backedCandidates.length} backed candidates`);
+      
+      for (const candidate of data.backedCandidates) {
+        if (!candidate?.candidate?.descriptor?.paraId || !candidate.candidate.commitments) {
+          continue;
+        }
+
+        const paraId = candidate.candidate.descriptor.paraId.toString();
+        const commitments = candidate.candidate.commitments;
+        
+        // Process upward messages
+        if (Array.isArray(commitments.upwardMessages) && commitments.upwardMessages.length > 0) {
+          logger.info(`Found ${commitments.upwardMessages.length} upward messages for paraId ${paraId}`);
+          await processUpwardMessages(api, messages, paraId, commitments.upwardMessages);
+        }
+
+        // Process horizontal messages
+        if (Array.isArray(commitments.horizontalMessages) && commitments.horizontalMessages.length > 0) {
+          logger.info(`Found ${commitments.horizontalMessages.length} horizontal messages for paraId ${paraId}`);
+          for (const msg of commitments.horizontalMessages) {
             if (msg?.data) {
               const decoded = await decodeXcmMessage(api, msg.data.slice(1));
               messages.push({
                 type: 'horizontal',
                 data: decoded,
                 metadata: {
-                  originParaId: paraId.toString(),
-                  sentAt: msg.sentAt
+                  originParaId: paraId,
+                  destinationParaId: msg.recipient?.toString()
                 }
               });
-            }
-          }
-        }
-      }
-    }
-  } else if (section === 'paraInherent') {
-    if (method === 'enter' && extrinsic.args.data) {
-      const data = extrinsic.args.data as ISanitizedParentInherentData;
-      
-      if (data && typeof data === 'object' && 'backedCandidates' in data) {
-        const backedCandidates = data.backedCandidates;
-        logger.info(`Found ${backedCandidates?.length} backed candidates`);
-        
-        if (Array.isArray(backedCandidates)) {
-          for (const candidate of backedCandidates) {
-            if (candidate?.candidate?.descriptor?.paraId && candidate.candidate.commitments) {
-              const paraId = candidate.candidate.descriptor.paraId.toString();
-              const commitments = candidate.candidate.commitments;
-              logger.info(`Processing candidate for paraId ${paraId} with commitments:`, JSON.stringify(commitments, null, 2));
-              
-              // Process upward messages using the dedicated function
-              if (Array.isArray(commitments.upwardMessages) && commitments.upwardMessages.length > 0) {
-                logger.info(`Found ${commitments.upwardMessages.length} upward messages for paraId ${paraId}`);
-                await processUpwardMessages(api, messages, paraId, commitments.upwardMessages);
-              }
-
-              // Process horizontal messages
-              if (Array.isArray(commitments.horizontalMessages) && commitments.horizontalMessages.length > 0) {
-                logger.info(`Found ${commitments.horizontalMessages.length} horizontal messages for paraId ${paraId}`);
-                for (const msg of commitments.horizontalMessages) {
-                  if (msg?.data) {
-                    const decoded = await decodeXcmMessage(api, msg.data.slice(1));
-                    messages.push({
-                      type: 'horizontal',
-                      data: decoded,
-                      metadata: {
-                        originParaId: paraId,
-                        destinationParaId: msg.recipient?.toString()
-                      }
-                    });
-                  }
-                }
-              }
             }
           }
         }
@@ -183,11 +206,14 @@ export async function processExtrinsic(api: ApiPromise, extrinsic: IExtrinsic): 
   return messages;
 }
 
+/**
+ * Process a block for XCM messages
+ */
 export async function processBlock(api: ApiPromise, block: Block): Promise<XcmMessage[]> {
   const allMessages: XcmMessage[] = [];
 
   for (const extrinsic of block.extrinsics) {
-    const messages = await processExtrinsic(api, extrinsic as unknown as IExtrinsic);
+    const messages = await processExtrinsic(api, extrinsic);
     allMessages.push(...messages);
   }
 
