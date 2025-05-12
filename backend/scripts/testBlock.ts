@@ -1,4 +1,4 @@
-import { abstractApi } from '../src/services/abstractApi';
+import { AbstractApi } from '../src/services/abstractApi';
 import { processBlock } from '../src/services/xcmProcessing';
 
 type ChainType = 'asset-hub' | 'relay-chain';
@@ -20,7 +20,7 @@ async function main() {
 
   try {
     // Connect to the specified chain
-    const api = await abstractApi(chain);
+    const api = chainArg === 'relay-chain' ? await AbstractApi.getInstance().getRelayChainApi() : await AbstractApi.getInstance().getAssetHubApi();
 
     // Get the block hash for the given block number
     const hash = await api.rpc.chain.getBlockHash(blockNumber);
