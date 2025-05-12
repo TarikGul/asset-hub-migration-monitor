@@ -1,8 +1,11 @@
+import { db } from '../db';
+import { migrationStages } from '../db/schema';
 import { AbstractApi } from './abstractApi';
 import { processBlock } from './xcmProcessing';
 import { Log } from '../logging/Log';
+import { eventService } from './eventService';
 
-export async function runAssetHubService() {
+export async function runAhHeadsService() {
   const { logger } = Log;
   const api = await AbstractApi.getInstance().getAssetHubApi();
 
@@ -33,4 +36,39 @@ export async function runAssetHubService() {
   return {
     unsubscribe
   };
+}
+
+export async function runAhMigrationStageService() {
+  const { logger } = Log;
+  const api = await AbstractApi.getInstance().getAssetHubApi();
+  
+  const unsubscribeMigrationStage = await api.query.ahMigrator.ahMigrationStage(async (migrationStage: any) => {
+    try {
+      const header = await api.rpc.chain.getHeader();
+      
+      await db.insert(migrationStage).values({
+        stage: migrationStage.type,
+        details: JSON.stringify(migrationStage.toJSON()),
+        blockNumber: header.number.toNumber(),
+        blockHash: header.hash.toHex(),
+      });
+
+      eventService.emit('ahStageUpdate', {
+        stage: migrationStage.type,
+        details: migrationStage.toJSON(),
+        blockNumber: header.number.toNumber(),
+        blockHash: header.hash.toHex(),
+        timestamp: new Date().toISOString(),
+      });
+
+      logger.info('Asset HubMigration stage updated:', {
+        stage: migrationStage.type,
+        blockNumber: header.number.toNumber(),
+      });
+    } catch (error) {
+      logger.error('Error processing migration stage:', error);
+    }
+  });
+
+  return unsubscribeMigrationStage;
 }

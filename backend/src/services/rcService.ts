@@ -22,7 +22,7 @@ export async function runRcHeadsService(data: RcHeadsServiceData): Promise<VoidF
 
   const unsubscribeHeads = await api.rpc.chain.subscribeFinalizedHeads(async (header) => {
     logger.info(`New block #${header.number} detected, fetching complete block...`);
-    console.log('data', data);
+
     if (data.scheduledBlockNumber && header.number.toBn().gte(data.scheduledBlockNumber.toBn())) {
       isProcessingXcm = true
       logger.info(`Starting XCM message processing from block #${header.number}`);
