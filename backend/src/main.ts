@@ -61,8 +61,8 @@ eventService.on('migrationScheduled', async (data) => {
 
   // Start new heads service with the scheduled block number
   try {
-    cleanupHeads = await runRcHeadsService(data.scheduledBlock);
-    logger.info(`Started monitoring heads for scheduled block #${data.scheduledBlock}`);
+    cleanupHeads = await runRcHeadsService(data);
+    logger.info(`Started monitoring heads for scheduled block #${data.scheduledBlockNumber}`);
   } catch (error) {
     logger.error('Error starting heads service:', error);
   }
