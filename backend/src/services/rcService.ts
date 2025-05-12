@@ -8,15 +8,18 @@ import { processBlock } from './xcmProcessing';
 import { VoidFn } from '@polkadot/api/types';
 import { eventService } from './eventService';
 
+import { Log } from '../logging/Log';
+
 export async function runRcHeadsService(scheduledBlockNumber: u32): Promise<VoidFn> {
+  const { logger } = Log;
   const api = await AbstractApi.getInstance().getRelayChainApi();
   let isProcessingXcm = false;
 
   const unsubscribeHeads = await api.rpc.chain.subscribeFinalizedHeads(async (header) => {
-    console.log(`New block #${header.number} detected, fetching complete block...`);
+    logger.info(`New block #${header.number} detected, fetching complete block...`);
     if (scheduledBlockNumber !== null && header.number.toBn().gte(scheduledBlockNumber.toBn())) {
       isProcessingXcm = true
-      console.log(`Starting XCM message processing from block #${header.number}`);
+      logger.info(`Starting XCM message processing from block #${header.number}`);
     }
 
     if (isProcessingXcm) {
@@ -24,7 +27,7 @@ export async function runRcHeadsService(scheduledBlockNumber: u32): Promise<Void
         const signedBlock = await api.rpc.chain.getBlock(header.hash);
         const { block } = signedBlock;
 
-        console.log(`
+        logger.info(`
           Block: #${block.header.number}
           Hash: ${block.header.hash.toHex()}
           Extrinsic Count: ${block.extrinsics.length}
@@ -34,13 +37,13 @@ export async function runRcHeadsService(scheduledBlockNumber: u32): Promise<Void
         const xcmMessages = await processBlock(api, block);
         if (xcmMessages.length > 0) {
           // TODO: Save to database
-          console.log('XCM Messages found:', JSON.stringify(xcmMessages, null, 2));
+          logger.info('XCM Messages found:', JSON.stringify(xcmMessages, null, 2));
         }
       } catch (error) {
-        console.error(`Error processing block: ${error}`);
+        logger.info(`Error processing block: ${error}`);
       }
     } else if (scheduledBlockNumber !== null) {
-      console.log(`Waiting for scheduled block #${scheduledBlockNumber}, current block #${header.number}`);
+      logger.info(`Waiting for scheduled block #${scheduledBlockNumber}, current block #${header.number}`);
     }
   });
 
@@ -48,6 +51,7 @@ export async function runRcHeadsService(scheduledBlockNumber: u32): Promise<Void
 }
 
 export async function runRcMigrationStageService(): Promise<VoidFn> {
+  const { logger } = Log;
   const api = await AbstractApi.getInstance().getRelayChainApi();
 
   const unsubscribeMigrationStage = await api.query.rcMigrator.rcMigrationStage(async (migrationStage: PalletRcMigratorMigrationStage) => {
@@ -68,7 +72,7 @@ export async function runRcMigrationStageService(): Promise<VoidFn> {
         eventService.emit('migrationScheduled', {
           scheduledBlock
         });
-        console.log(`Migration scheduled for block #${scheduledBlock}`);
+        logger.info(`Migration scheduled for block #${scheduledBlock}`);
       }
 
       eventService.emit('stageUpdate', {
@@ -79,12 +83,12 @@ export async function runRcMigrationStageService(): Promise<VoidFn> {
         timestamp: new Date().toISOString(),
       });
 
-      console.log('Migration stage updated:', {
+      logger.info('Migration stage updated:', {
         stage: migrationStage.type,
         blockNumber: header.number.toNumber(),
       });
     } catch (error) {
-      console.error('Error processing migration stage:', error);
+      logger.info('Error processing migration stage:', error);
     }
   }) as unknown as VoidFn;
 

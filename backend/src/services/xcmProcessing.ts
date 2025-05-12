@@ -6,8 +6,10 @@ import {
   ISanitizedParachainInherentData,
   ISanitizedParentInherentData
 } from '../types/xcm';
+import { Log } from '../logging/Log';
 
 export async function decodeXcmMessage(api: ApiPromise, message: any): Promise<string> {
+  const { logger } = Log;
   try {
     // If the message is a string, try to decode it directly
     if (typeof message === 'string') {
@@ -33,7 +35,7 @@ export async function decodeXcmMessage(api: ApiPromise, message: any): Promise<s
     // If it's an array of assets or other XCM-related data, stringify it
     return JSON.stringify(message, null, 2);
   } catch (error) {
-    console.error('Error decoding XCM message:', error);
+    logger.error('Error decoding XCM message:', error);
     return 'Failed to decode XCM message';
   }
 }
@@ -66,6 +68,7 @@ async function processUpwardMessages(
 
 // TODO: We dont need to retrieve horizontal messages for the AHM
 export async function processExtrinsic(api: ApiPromise, extrinsic: IExtrinsic): Promise<XcmMessage[]> {
+  const { logger } = Log;
   const messages: XcmMessage[] = [];
   const { method: { method, section } } = extrinsic;
 
@@ -85,7 +88,7 @@ export async function processExtrinsic(api: ApiPromise, extrinsic: IExtrinsic): 
         }
       }
     } catch (error) {
-      console.error('Error extracting destination paraId:', error);
+      logger.error('Error extracting destination paraId:', error);
     }
 
     messages.push({
@@ -138,24 +141,24 @@ export async function processExtrinsic(api: ApiPromise, extrinsic: IExtrinsic): 
       
       if (data && typeof data === 'object' && 'backedCandidates' in data) {
         const backedCandidates = data.backedCandidates;
-        console.log(`Found ${backedCandidates?.length} backed candidates`);
+        logger.info(`Found ${backedCandidates?.length} backed candidates`);
         
         if (Array.isArray(backedCandidates)) {
           for (const candidate of backedCandidates) {
             if (candidate?.candidate?.descriptor?.paraId && candidate.candidate.commitments) {
               const paraId = candidate.candidate.descriptor.paraId.toString();
               const commitments = candidate.candidate.commitments;
-              console.log(`Processing candidate for paraId ${paraId} with commitments:`, JSON.stringify(commitments, null, 2));
+              logger.info(`Processing candidate for paraId ${paraId} with commitments:`, JSON.stringify(commitments, null, 2));
               
               // Process upward messages using the dedicated function
               if (Array.isArray(commitments.upwardMessages) && commitments.upwardMessages.length > 0) {
-                console.log(`Found ${commitments.upwardMessages.length} upward messages for paraId ${paraId}`);
+                logger.info(`Found ${commitments.upwardMessages.length} upward messages for paraId ${paraId}`);
                 await processUpwardMessages(api, messages, paraId, commitments.upwardMessages);
               }
 
               // Process horizontal messages
               if (Array.isArray(commitments.horizontalMessages) && commitments.horizontalMessages.length > 0) {
-                console.log(`Found ${commitments.horizontalMessages.length} horizontal messages for paraId ${paraId}`);
+                logger.info(`Found ${commitments.horizontalMessages.length} horizontal messages for paraId ${paraId}`);
                 for (const msg of commitments.horizontalMessages) {
                   if (msg?.data) {
                     const decoded = await decodeXcmMessage(api, msg.data.slice(1));

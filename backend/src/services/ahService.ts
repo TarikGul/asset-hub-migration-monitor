@@ -1,17 +1,19 @@
 import { AbstractApi } from './abstractApi';
 import { processBlock } from './xcmProcessing';
+import { Log } from '../logging/Log';
 
 export async function runAssetHubService() {
+  const { logger } = Log;
   const api = await AbstractApi.getInstance().getAssetHubApi();
 
   const unsubscribe = await api.rpc.chain.subscribeFinalizedHeads(async (header) => {
-    console.log(`New block #${header.number} detected, fetching complete block...`);
+    logger.info(`New block #${header.number} detected, fetching complete block...`);
 
     try {
       const signedBlock = await api.rpc.chain.getBlock(header.hash);
       const { block } = signedBlock;
 
-      console.log(`
+      logger.info(`
         Block: #${block.header.number}
         Hash: ${block.header.hash.toHex()}
         Extrinsic Count: ${block.extrinsics.length}
@@ -21,10 +23,10 @@ export async function runAssetHubService() {
       const xcmMessages = await processBlock(api, block);
       if (xcmMessages.length > 0) {
         // TODO: Save to database
-        console.log('XCM Messages found:', JSON.stringify(xcmMessages, null, 2));
+        logger.info('XCM Messages found:', JSON.stringify(xcmMessages, null, 2));
       }
     } catch (error) {
-      console.error(`Error processing block: ${error}`);
+      logger.error(`Error processing block: ${error}`);
     }
   });
 

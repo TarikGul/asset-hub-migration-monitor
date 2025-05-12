@@ -3,9 +3,11 @@ import { eventService } from '../services/eventService';
 import { db } from '../db';
 import { migrationStages } from '../db/schema';
 import { desc } from 'drizzle-orm';
+import { Log } from '../logging/Log';
 
 export const migrationStagesHandler: RequestHandler = async (req, res) => {
-  console.log('New SSE connection established');
+  const { logger } = Log;
+  logger.info('New SSE connection established');
   
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
@@ -30,7 +32,7 @@ export const migrationStagesHandler: RequestHandler = async (req, res) => {
 
     res.write(`event: connected\ndata: ${JSON.stringify(initialData)}\n\n`);
   } catch (error) {
-    console.error('Error sending initial connection message:', error);
+    logger.error('Error sending initial connection message:', error);
     res.end();
     return;
   }
@@ -44,7 +46,7 @@ export const migrationStagesHandler: RequestHandler = async (req, res) => {
       const eventData = `event: stageUpdate\ndata: ${JSON.stringify(data)}\n\n`;
       res.write(eventData);
     } catch (error) {
-      console.error('Error sending update:', error);
+      logger.error('Error sending update:', error);
     }
   };
 

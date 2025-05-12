@@ -7,8 +7,11 @@ import cors from 'cors';
 import { runRcHeadsService, runRcMigrationStageService } from './services/rcService';
 import { migrationStagesHandler } from './routes/migrationStages';
 import { eventService } from './services/eventService';
+import { Log } from './logging/Log';
 
 import { getConfig } from './config';
+
+const { logger } = Log;
 
 const app = express();
 const port = getConfig().port;
@@ -28,8 +31,8 @@ app.get('/health', (_req: Request, res: Response) => {
 app.get('/api/migration-stages', migrationStagesHandler);
 
 const server = app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-  console.log('Connected to:', {
+  logger.info(`Server running on port ${port}`);
+  logger.info('Connected to:', {
     assetHub: getConfig().assetHubUrl,
     relayChain: getConfig().relayChainUrl,
   });
@@ -43,15 +46,15 @@ runRcMigrationStageService()
   .then((result) => {
     cleanupMigrationStage = result;
   })
-  .catch(console.error);
+  .catch(err => logger.error(err));
 
 // Listen for the migrationScheduled event
 eventService.on('migrationScheduled', async (data) => {
-  console.log('Migration scheduled event received:', data);
+  logger.info('Migration scheduled event received:', data);
   
   // Clean up existing heads subscription if it exists
   if (cleanupHeads) {
-    console.log('Cleaning up existing heads subscription...');
+    logger.info('Cleaning up existing heads subscription...');
     cleanupHeads();
     cleanupHeads = null;
   }
@@ -59,9 +62,9 @@ eventService.on('migrationScheduled', async (data) => {
   // Start new heads service with the scheduled block number
   try {
     cleanupHeads = await runRcHeadsService(data.scheduledBlock);
-    console.log(`Started monitoring heads for scheduled block #${data.scheduledBlock}`);
+    logger.info(`Started monitoring heads for scheduled block #${data.scheduledBlock}`);
   } catch (error) {
-    console.error('Error starting heads service:', error);
+    logger.error('Error starting heads service:', error);
   }
 });
 
@@ -69,26 +72,26 @@ eventService.on('migrationScheduled', async (data) => {
 const signals = ['SIGINT', 'SIGTERM', 'SIGQUIT'] as const;
 signals.forEach((signal) => {
   process.on(signal, async () => {
-    console.log(`\nReceived ${signal}. Starting graceful shutdown...`);
+    logger.info(`\nReceived ${signal}. Starting graceful shutdown...`);
 
     if (cleanupMigrationStage) {
-      console.log('Cleaning up migration stage subscription...');
+      logger.info('Cleaning up migration stage subscription...');
       cleanupMigrationStage();
     }
 
     if (cleanupHeads) {
-      console.log('Cleaning up heads subscription...');
+      logger.info('Cleaning up heads subscription...');
       cleanupHeads();
     } 
 
     server.close(() => {
-      console.log('Server closed. Exiting...');
+      logger.info('Server closed. Exiting...');
       process.exit(0);
     });
 
     // Force exit after 5 seconds if cleanup takes too long
     setTimeout(() => {
-      console.error('Forced exit after timeout');
+      logger.error('Forced exit after timeout');
       process.exit(1);
     }, 5000);
   });
