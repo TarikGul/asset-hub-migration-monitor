@@ -16,27 +16,9 @@ const { logger } = Log;
  * Decode XCM message into a human-readable format
  */
 export async function decodeXcmMessage(api: ApiPromise, message: any): Promise<string> {
-  try {
-    if (typeof message === 'string') {
-      const instructions = [];
-      let xcmMessage = message;
-      let instructionLength = 0;
-      
-      while (xcmMessage.length !== 0) {
-        const xcmInstructions = api.createType('XcmVersionedXcm', xcmMessage);
-        instructions.push(xcmInstructions);
-        instructionLength = xcmInstructions.toU8a().length;
-        xcmMessage = xcmMessage.slice(instructionLength);
-      }
-      return JSON.stringify(instructions, null, 2);
-    }
-    
-    if (message?.v4) {
-      const xcmInstructions = api.createType('XcmVersionedXcm', message);
-      return xcmInstructions.toString();
-    }
-
-    return JSON.stringify(message, null, 2);
+  try {    
+    const xcmInstructions = api.createType('XcmVersionedXcm', message);
+    return JSON.stringify(xcmInstructions.toHuman(), null, 2);
   } catch (error) {
     logger.error('Error decoding XCM message:', error);
     return 'Failed to decode XCM message';
