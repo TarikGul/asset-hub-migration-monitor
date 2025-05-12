@@ -10,15 +10,24 @@ import { eventService } from './eventService';
 
 import { Log } from '../logging/Log';
 
-export async function runRcHeadsService(scheduledBlockNumber: u32): Promise<VoidFn> {
+interface RcHeadsServiceData {
+  scheduledBlockNumber: u32;
+  skipAndStart: boolean;
+}
+
+export async function runRcHeadsService(data: RcHeadsServiceData): Promise<VoidFn> {
   const { logger } = Log;
   const api = await AbstractApi.getInstance().getRelayChainApi();
   let isProcessingXcm = false;
 
   const unsubscribeHeads = await api.rpc.chain.subscribeFinalizedHeads(async (header) => {
     logger.info(`New block #${header.number} detected, fetching complete block...`);
-    if (scheduledBlockNumber !== null && header.number.toBn().gte(scheduledBlockNumber.toBn())) {
+    console.log('data', data);
+    if (data.scheduledBlockNumber && header.number.toBn().gte(data.scheduledBlockNumber.toBn())) {
       isProcessingXcm = true
+      logger.info(`Starting XCM message processing from block #${header.number}`);
+    } else if (data.skipAndStart) {
+      isProcessingXcm = true;
       logger.info(`Starting XCM message processing from block #${header.number}`);
     }
 
@@ -42,8 +51,8 @@ export async function runRcHeadsService(scheduledBlockNumber: u32): Promise<Void
       } catch (error) {
         logger.info(`Error processing block: ${error}`);
       }
-    } else if (scheduledBlockNumber !== null) {
-      logger.info(`Waiting for scheduled block #${scheduledBlockNumber}, current block #${header.number}`);
+    } else if (data.scheduledBlockNumber !== null) {
+      logger.info(`Waiting for scheduled block #${data.scheduledBlockNumber}, current block #${header.number}`);
     }
   });
 
@@ -55,6 +64,7 @@ export async function runRcMigrationStageService(): Promise<VoidFn> {
   const api = await AbstractApi.getInstance().getRelayChainApi();
 
   const unsubscribeMigrationStage = await api.query.rcMigrator.rcMigrationStage(async (migrationStage: PalletRcMigratorMigrationStage) => {
+    let isMigrationScheduled = false;
     try {
       // TODO: Technically we want to confirm this is the block that has the proper migration stage in the events
       const header = await api.rpc.chain.getHeader();
@@ -67,12 +77,22 @@ export async function runRcMigrationStageService(): Promise<VoidFn> {
       });
 
       // If we receive a Scheduled stage, emit an event with the block number
-      if (migrationStage.isScheduled) {
+      if (migrationStage.isScheduled && !isMigrationScheduled) {
         const scheduledBlock = migrationStage.asScheduled.blockNumber;
         eventService.emit('migrationScheduled', {
           scheduledBlock
         });
+        isMigrationScheduled = true;
         logger.info(`Migration scheduled for block #${scheduledBlock}`);
+      }
+
+      if (!migrationStage.isPending || !migrationStage.isScheduled || !isMigrationScheduled) {
+        eventService.emit('migrationScheduled', {
+          skipAndStart: true
+        });
+        isMigrationScheduled = true;
+        // TODO: Remove this once we have a way to detect if the migration has already started
+        logger.info('Migration already started, enabling skip and start...');
       }
 
       eventService.emit('stageUpdate', {
