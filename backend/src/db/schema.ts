@@ -4,6 +4,7 @@ import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 // Migration Stages
 export const migrationStages = sqliteTable('migration_stages', {
   id: integer('id').primaryKey({ autoIncrement: true }),
+  chain: text('chain').notNull(), // 'asset-hub' or 'relay-chain'
   stage: text('stage').notNull(),
   details: text('details'), // JSON stringified details about the stage
   blockNumber: integer('block_number').notNull(),

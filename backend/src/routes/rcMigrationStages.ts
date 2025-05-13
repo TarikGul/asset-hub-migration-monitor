@@ -2,7 +2,7 @@ import { RequestHandler } from 'express';
 import { eventService } from '../services/eventService';
 import { db } from '../db';
 import { migrationStages } from '../db/schema';
-import { desc } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import { Log } from '../logging/Log';
 
 export const rcMigrationStagesHandler: RequestHandler = async (req, res) => {
@@ -16,6 +16,7 @@ export const rcMigrationStagesHandler: RequestHandler = async (req, res) => {
   try {
     // Get the latest migration stage from the database
     const latestStage = await db.query.migrationStages.findFirst({
+      where: eq(migrationStages.chain, 'relay-chain'),
       orderBy: [desc(migrationStages.timestamp)],
     });
 

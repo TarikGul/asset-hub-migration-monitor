@@ -83,6 +83,7 @@ export async function runAhMigrationStageService() {
       const header = await api.rpc.chain.getHeader();
       
       await db.insert(migrationStages).values({
+        chain: 'asset-hub',
         stage: migrationStage.type,
         details: JSON.stringify(migrationStage.toJSON()),
         blockNumber: header.number.toNumber(),
@@ -90,6 +91,7 @@ export async function runAhMigrationStageService() {
       });
 
       eventService.emit('ahStageUpdate', {
+        chain: 'asset-hub',
         stage: migrationStage.type,
         details: migrationStage.toJSON(),
         blockNumber: header.number.toNumber(),
@@ -98,6 +100,7 @@ export async function runAhMigrationStageService() {
       });
 
       logger.info('Asset Hub Migration stage updated:', {
+        chain: 'asset-hub',
         stage: migrationStage.type,
         blockNumber: header.number.toNumber(),
       });

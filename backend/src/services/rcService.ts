@@ -70,6 +70,7 @@ export async function runRcMigrationStageService(): Promise<VoidFn> {
       
       await db.insert(migrationStages).values({
         stage: migrationStage.type,
+        chain: 'relay-chain',
         details: JSON.stringify(migrationStage.toJSON()),
         blockNumber: header.number.toNumber(),
         blockHash: header.hash.toHex(),
@@ -96,6 +97,7 @@ export async function runRcMigrationStageService(): Promise<VoidFn> {
 
       eventService.emit('rcStageUpdate', {
         stage: migrationStage.type,
+        chain: 'relay-chain',
         details: migrationStage.toJSON(),
         blockNumber: header.number.toNumber(),
         blockHash: header.hash.toHex(),
@@ -104,6 +106,7 @@ export async function runRcMigrationStageService(): Promise<VoidFn> {
 
       logger.info('Migration stage updated:', {
         stage: migrationStage.type,
+        chain: 'relay-chain',
         blockNumber: header.number.toNumber(),
       });
     } catch (error) {

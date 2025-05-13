@@ -2,12 +2,12 @@ import { RequestHandler } from 'express';
 import { eventService } from '../services/eventService';
 import { db } from '../db';
 import { migrationStages } from '../db/schema';
-import { desc } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import { Log } from '../logging/Log';
 
 export const ahMigrationStagesHandler: RequestHandler = async (req, res) => {
   const { logger } = Log;
-  logger.info('New SSE connection established for AH migration stages');
+  logger.info('New client connected to AH migration stages SSE');
   
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
@@ -16,6 +16,7 @@ export const ahMigrationStagesHandler: RequestHandler = async (req, res) => {
   try {
     // Get the latest migration stage from the database
     const latestStage = await db.query.migrationStages.findFirst({
+      where: eq(migrationStages.chain, 'asset-hub'),
       orderBy: [desc(migrationStages.timestamp)],
     });
 
