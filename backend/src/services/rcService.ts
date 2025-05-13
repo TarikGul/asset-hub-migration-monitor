@@ -1,14 +1,15 @@
 import type { PalletRcMigratorMigrationStage } from '../types/pjs';
 import type { u32 } from '@polkadot/types';
-
+import type { ITuple } from '@polkadot/types/types';
 import { db } from '../db';
 import { migrationStages } from '../db/schema';
 import { AbstractApi } from './abstractApi';
 import { processBlock } from './xcmProcessing';
 import { VoidFn } from '@polkadot/api/types';
 import { eventService } from './eventService';
-
+import { xcmMessageCounters } from '../db/schema';
 import { Log } from '../logging/Log';
+import { eq } from 'drizzle-orm';
 
 interface RcHeadsServiceData {
   scheduledBlockNumber?: u32;
@@ -40,6 +41,7 @@ export async function runRcHeadsService(data: RcHeadsServiceData): Promise<VoidF
         const xcmMessages = await processBlock(api, block);
         if (xcmMessages.length > 0) {
           // TODO: Save to database
+          // This will be pertinent when we want to track the contents of the messages.
         }
       } catch (error) {
         logger.info(`Error processing block: ${error}`);
@@ -109,4 +111,87 @@ export async function runRcMigrationStageService(): Promise<VoidFn> {
   }) as unknown as VoidFn;
 
   return unsubscribeMigrationStage;
+}
+
+async function updateXcmMessageCounters(sentToAh: number, processedOnAh: number) {
+  const { logger } = Log;
+  
+  try {
+    // Update the RC->AH counter with processed messages
+    await db.update(xcmMessageCounters)
+      .set({
+        messagesSent: sentToAh,
+        lastUpdated: new Date(),
+      })
+      .where(eq(xcmMessageCounters.sourceChain, 'relay-chain'));
+
+    await db.update(xcmMessageCounters)
+      .set({
+        messagesProcessed: processedOnAh,
+        lastUpdated: new Date(),
+      })
+      .where(eq(xcmMessageCounters.sourceChain, 'asset-hub'));
+
+    // Get the updated counter
+    const counterRc = await db.query.xcmMessageCounters.findFirst({
+      where: (counters, { eq }) => eq(counters.sourceChain, 'relay-chain'),
+    });
+
+    // Get the updated counter
+    const counterAh = await db.query.xcmMessageCounters.findFirst({
+      where: (counters, { eq }) => eq(counters.sourceChain, 'asset-hub'),
+    });
+
+    if (counterRc) {
+      const eventData = {
+        sourceChain: counterRc.sourceChain,
+        destinationChain: counterRc.destinationChain,
+        messagesSent: counterRc.messagesSent,
+        messagesProcessed: counterRc.messagesProcessed,
+        messagesFailed: counterRc.messagesFailed,
+        lastUpdated: counterRc.lastUpdated,
+      };
+      
+      logger.info('Emitting rcXcmMessageCounter event with data:', eventData);
+      eventService.emit('rcXcmMessageCounter', eventData);
+    } else {
+      logger.warn('No counter found after update');
+    }
+
+    if (counterAh) {
+      const eventData = {
+        sourceChain: counterAh.sourceChain,
+        destinationChain: counterAh.destinationChain,
+        messagesSent: counterAh.messagesSent,
+        messagesProcessed: counterAh.messagesProcessed,
+        messagesFailed: counterAh.messagesFailed,
+        lastUpdated: counterAh.lastUpdated,
+      };
+
+      logger.info('Emitting ahXcmMessageCounter event with data:', eventData);
+      eventService.emit('ahXcmMessageCounter', eventData);
+    } else {
+      logger.warn('No counter found after update');
+    }
+
+    logger.info(`Updated XCM message counter for relay-chain -> asset-hub: ${sentToAh} sent, ${processedOnAh} processed messages`);
+  } catch (error) {
+    logger.error('Error updating XCM message counter:', error);
+  }
+}
+
+export async function runRcXcmMessageCounterService() {
+  const { logger } = Log;
+  const api = await AbstractApi.getInstance().getRelayChainApi();
+
+  const unsubscribeXcmMessages = await api.query.rcMigrator.dmpDataMessageCounts(async (messages: ITuple<[u32, u32]>) => {
+    try {
+      const [sentToAh, processedOnAh] = messages;
+      await updateXcmMessageCounters(sentToAh.toNumber(), processedOnAh.toNumber());
+    } catch (error) {
+      logger.error('Error processing XCM messages:', error);
+    }
+  }) as unknown as VoidFn;
+
+  return unsubscribeXcmMessages;
 }
