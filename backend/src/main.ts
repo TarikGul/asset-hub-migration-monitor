@@ -6,6 +6,7 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { runRcHeadsService, runRcMigrationStageService } from './services/rcService';
 import { migrationStagesHandler } from './routes/migrationStages';
+import { ahXcmCounterHandler } from './routes/ahXcmCounter';
 import { eventService } from './services/eventService';
 import { Log } from './logging/Log';
 
@@ -29,6 +30,7 @@ app.get('/health', (_req: Request, res: Response) => {
 });
 
 app.get('/api/migration-stages', migrationStagesHandler);
+app.get('/api/ah-xcm-counter', ahXcmCounterHandler);
 
 const server = app.listen(port, () => {
   logger.info(`Server running on port ${port}`);

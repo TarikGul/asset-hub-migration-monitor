@@ -1,11 +1,58 @@
 import { db } from '../db';
+import { xcmMessageCounters } from '../db/schema';
+import { sql } from 'drizzle-orm';
 
 import { AbstractApi } from './abstractApi';
-import { processBlock } from './xcmProcessing';
 import { Log } from '../logging/Log';
 import { eventService } from './eventService';
 import { ApiPromise } from '@polkadot/api';
 import type { Block } from '@polkadot/types/interfaces';
+
+async function updateXcmMessageCounters(upwardMessageSent: number, downwardMessagesProcessed: number) {
+  const { logger } = Log;
+  
+  try {
+    // Update the AH->RC counter with processed messages
+    await db.insert(xcmMessageCounters)
+      .values({
+        sourceChain: 'asset-hub',
+        destinationChain: 'relay-chain',
+        messagesSent: 0,
+        messagesProcessed: upwardMessageSent + downwardMessagesProcessed,
+        messagesFailed: 0,
+      })
+      .onConflictDoUpdate({
+        target: [xcmMessageCounters.sourceChain, xcmMessageCounters.destinationChain],
+        set: {
+          messagesProcessed: sql`${xcmMessageCounters.messagesProcessed} + ${upwardMessageSent + downwardMessagesProcessed}`,
+          lastUpdated: new Date(),
+        },
+      });
+
+    // Get the updated counter
+    const counter = await db.query.xcmMessageCounters.findFirst({
+      where: (counters, { and, eq }) => and(
+        eq(counters.sourceChain, 'asset-hub'),
+        eq(counters.destinationChain, 'relay-chain')
+      ),
+    });
+
+    if (counter) {
+      eventService.emit('ahXcmMessageCounter', {
+        sourceChain: counter.sourceChain,
+        destinationChain: counter.destinationChain,
+        messagesSent: counter.messagesSent,
+        messagesProcessed: counter.messagesProcessed,
+        messagesFailed: counter.messagesFailed,
+        lastUpdated: counter.lastUpdated,
+      });
+    }
+
+    logger.info(`Updated XCM message counter for asset-hub -> relay-chain: ${upwardMessageSent} upward, ${downwardMessagesProcessed} downward messages processed`);
+  } catch (error) {
+    logger.error('Error updating XCM message counter:', error);
+  }
+}
 
 export async function runAhHeadsService() {
   const { logger } = Log;
@@ -25,9 +72,9 @@ export async function runAhHeadsService() {
       `);
 
       // Process block for XCM messages
-      const xcmMessages = await processBlock(api, block);
-      if (xcmMessages.length > 0) {
-        logger.info('XCM Messages found:', JSON.stringify(xcmMessages, null, 2));
+      const { upwardMessageSent, downwardMessagesProcessed } = await findXcmMessages(api, block);
+      if (upwardMessageSent > 0 || downwardMessagesProcessed > 0) {
+        await updateXcmMessageCounters(upwardMessageSent, downwardMessagesProcessed);
       }
     } catch (error) {
       logger.error(`Error processing block: ${error}`);
