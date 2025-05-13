@@ -5,7 +5,7 @@ import type { VoidFn } from '@polkadot/api/types';
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { initializeDb } from './db/initializeDb';
-import { runRcHeadsService, runRcMigrationStageService, runRcXcmMessageCounterService } from './services/rcService';
+import { runRcHeadsService, runRcMigrationStageService, runRcXcmMessageCounterService, runRcBalancesService } from './services/rcService';
 import { rcMigrationStagesHandler } from './routes/rcMigrationStages';
 import { ahMigrationStagesHandler } from './routes/ahMigrationStages';
 import { ahXcmCounterHandler } from './routes/ahXcmCounter';
@@ -17,6 +17,7 @@ import { rcHeadsHandler } from './routes/rcHeads';
 import { runRcFinalizedHeadsService } from './services/rcService';
 import { ahHeadsHandler } from './routes/ahHeads';
 import { runAhFinalizedHeadsService } from './services/ahService';
+import { rcBalancesHandler } from './routes/rcBalances';
 
 import { getConfig } from './config';
 
@@ -53,6 +54,7 @@ app.get('/api/ah-xcm-counter', ahXcmCounterHandler);
 app.get('/api/rc-xcm-counter', rcXcmCounterHandler);
 app.get('/api/rc-heads', rcHeadsHandler);
 app.get('/api/ah-heads', ahHeadsHandler);
+app.get('/api/rc-balances', rcBalancesHandler);
 
 const server = app.listen(port, () => {
   logger.info(`Server running on port ${port}`);
@@ -70,6 +72,7 @@ let cleanupRcXcmMessageCounter: VoidFn | null = null;
 let cleanupAhXcmMessageCounter: VoidFn | null = null;
 let cleanupRcFinalizedHeads: VoidFn | null = null;
 let cleanupAhFinalizedHeads: VoidFn | null = null;
+let cleanupRcBalances: VoidFn | null = null;
 
 // Start the RC finalized heads service
 runRcFinalizedHeadsService()
@@ -107,6 +110,13 @@ runAhXcmMessageCounterService()
 runAhFinalizedHeadsService()
   .then((result) => {
     cleanupAhFinalizedHeads = result;
+  })
+  .catch(err => logger.error(err));
+
+// Start the RC balances service
+runRcBalancesService()
+  .then((result) => {
+    cleanupRcBalances = result;
   })
   .catch(err => logger.error(err));
 
@@ -174,6 +184,11 @@ signals.forEach((signal) => {
     if (cleanupRcFinalizedHeads) {
       logger.info('Cleaning up rc finalized heads subscription...');
       cleanupRcFinalizedHeads();
+    }
+
+    if (cleanupRcBalances) {
+      logger.info('Cleaning up rc balances subscription...');
+      cleanupRcBalances();
     }
 
     server.close(() => {

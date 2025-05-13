@@ -1,4 +1,4 @@
-  import type { Enum, Struct, Option, u32, u16, u64, Null } from '@polkadot/types';
+  import type { Enum, Struct, Option, u32, u16, u64, Null, u128 } from '@polkadot/types';
   import type { H256, AccountId32 } from '@polkadot/types/interfaces/runtime';
   import type { ITuple } from '@polkadot/types-codec/types';
   import type { U8aFixed } from '@polkadot/types-codec';
@@ -292,4 +292,9 @@
     readonly isFunds: boolean;
     readonly isFinished: boolean;
     readonly type: 'ProposalCount' | 'Proposals' | 'Approvals' | 'SpendCount' | 'Spends' | 'Funds' | 'Finished';
+  }
+
+  export interface PalletRcMigratorAccountsMigratedBalances extends Struct {
+    readonly kept: u128;
+    readonly migrated: u128;
   }

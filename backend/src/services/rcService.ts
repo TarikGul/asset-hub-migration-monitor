@@ -1,4 +1,4 @@
-import type { PalletRcMigratorMigrationStage } from '../types/pjs';
+import type { PalletRcMigratorMigrationStage, PalletRcMigratorAccountsMigratedBalances } from '../types/pjs';
 import type { u32 } from '@polkadot/types';
 import type { ITuple } from '@polkadot/types/types';
 import { db } from '../db';
@@ -207,4 +207,17 @@ export async function runRcXcmMessageCounterService() {
   }) as unknown as VoidFn;
 
   return unsubscribeXcmMessages;
+}
+
+export async function runRcBalancesService() {
+  const api = await AbstractApi.getInstance().getRelayChainApi();
+
+  const unsubscribeAccountsMigration = await api.query.rcMigrator.rcMigratedBalance(async (balances: PalletRcMigratorAccountsMigratedBalances) => {
+    eventService.emit('rcBalances', {
+      kept: balances.kept.toString(),
+      migrated: balances.migrated.toString(),
+    });
+  }) as unknown as VoidFn;
+
+  return unsubscribeAccountsMigration;
 }
