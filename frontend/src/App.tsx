@@ -1,18 +1,22 @@
 import React from 'react';
-import MigrationStatus from './components/MigrationStatus';
+import RcMigrationStatus from './components/RcMigrationStatus';
+import { AhMigrationStatus } from './components/AhMigrationStatus';
 import './App.css';
 
-const App: React.FC = () => {
+function App() {
   return (
     <div className="app">
       <header className="app-header">
         <h1>AH Monitoring</h1>
       </header>
       <main className="app-main">
-        <MigrationStatus />
+        <div className="migration-status-container">
+          <RcMigrationStatus />
+          <AhMigrationStatus />
+        </div>
       </main>
     </div>
   );
-};
+}
 
 export default App; 

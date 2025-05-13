@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import './MigrationStatus.css';
+import './AhMigrationStatus.css';
 
 interface MigrationStage {
   stage: string;
@@ -7,9 +7,10 @@ interface MigrationStage {
   blockNumber: number;
   blockHash: string;
   timestamp: string;
+  chain: string;
 }
 
-const MigrationStatus: React.FC = () => {
+export const AhMigrationStatus: React.FC = () => {
   const [currentStage, setCurrentStage] = useState<MigrationStage | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -17,48 +18,48 @@ const MigrationStatus: React.FC = () => {
   useEffect(() => {
     if (isConnected) return;
 
-    const sse = new EventSource('http://localhost:8080/api/migration-stages');
-    console.log('Setting up SSE connection...');
+    const sse = new EventSource('http://localhost:8080/api/ah-migration-stages');
+    console.log('Setting up SSE connection for AH...');
     setIsConnected(true);
 
     // Handle the initial connection event
     sse.addEventListener('connected', (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log('Received connected event:', data);
+        console.log('Received connected event for AH:', data);
         if (data.latestStage) {
           setCurrentStage(data.latestStage);
         }
       } catch (err) {
-        console.error('Error parsing connected event:', err);
+        console.error('Error parsing connected event for AH:', err);
       }
     });
 
     // Handle stage updates
-    sse.addEventListener('rcStageUpdate', (event) => {
+    sse.addEventListener('ahStageUpdate', (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log('Received stage update:', data);
+        console.log('Received stage update for AH:', data);
         setCurrentStage(data);
       } catch (err) {
-        console.error('Error parsing stage update:', err);
+        console.error('Error parsing stage update for AH:', err);
       }
     });
 
     // Handle general messages as fallback
     sse.onmessage = (event) => {
-      console.log('Received general message:', event.data);
+      console.log('Received general message for AH:', event.data);
     };
 
     sse.onerror = (err) => {
-      console.error('SSE Error:', err);
+      console.error('SSE Error for AH:', err);
       setError('Error connecting to migration stages');
       sse.close();
       setIsConnected(false);
     };
 
     return () => {
-      console.log('Cleaning up SSE connection...');
+      console.log('Cleaning up SSE connection for AH...');
       sse.close();
       setIsConnected(false);
     };
@@ -85,6 +86,4 @@ const MigrationStatus: React.FC = () => {
       </div>
     </div>
   );
-};
-
-export default MigrationStatus; 
+}; 
