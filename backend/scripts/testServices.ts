@@ -1,13 +1,13 @@
-import { runAssetHubService } from '../src/services/ahService';
-import { runRelayChainService } from '../src/services/rcService';
+import { runAhHeadsService } from '../src/services/ahService';
+import { runRcHeadsService } from '../src/services/rcService';
 
 async function main() {
   console.log('Starting Asset Hub and Relay Chain services...');
 
   try {
     // Start both services
-    const ahService = await runAssetHubService();
-    const rcService = await runRelayChainService();
+    const ahService = await runAhHeadsService();
+    const rcService = await runRcHeadsService({});
 
     console.log('Services started successfully. Press Ctrl+C to stop.');
 
@@ -15,7 +15,7 @@ async function main() {
     const shutdown = async () => {
       console.log('Shutting down services...');
       await ahService.unsubscribe();
-      await rcService.unsubscribe();
+      await rcService();
       process.exit(0);
     };
 

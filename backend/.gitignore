@@ -1,10 +1,18 @@
+# Node Modules
 node_modules
+
+# Environment Variables
 .env
 
+# Build Files
 /build
+/build-scripts
 
+# Drizzle
 drizzle
 
+# SQLite Database
 sqlite.db
 
+# Logs
 /logs
