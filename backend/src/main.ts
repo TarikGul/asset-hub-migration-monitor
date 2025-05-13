@@ -4,6 +4,7 @@ import type { VoidFn } from '@polkadot/api/types';
 
 import express, { Request, Response } from 'express';
 import cors from 'cors';
+import { initializeDb } from './db/initializeDb';
 import { runRcHeadsService, runRcMigrationStageService } from './services/rcService';
 import { rcMigrationStagesHandler } from './routes/rcMigrationStages';
 import { ahMigrationStagesHandler } from './routes/ahMigrationStages';
@@ -11,6 +12,7 @@ import { ahXcmCounterHandler } from './routes/ahXcmCounter';
 import { eventService } from './services/eventService';
 import { runAhMigrationStageService, runAhHeadsService } from './services/ahService';
 import { Log } from './logging/Log';
+import { rcXcmCounterHandler } from './routes/rcXcmCounter';
 
 import { getConfig } from './config';
 
@@ -18,6 +20,15 @@ const { logger } = Log;
 
 const app = express();
 const port = getConfig().port;
+
+// Initialize the database
+initializeDb()
+  .then(() => {
+    logger.info('Database initialized successfully');
+  })
+  .catch((err) => {
+    logger.error('Error initializing database:', err);
+  });
 
 // Enable CORS for all routes
 app.use(cors({
@@ -34,6 +45,7 @@ app.get('/health', (_req: Request, res: Response) => {
 app.get('/api/rc-migration-stages', rcMigrationStagesHandler);
 app.get('/api/ah-migration-stages', ahMigrationStagesHandler);
 app.get('/api/ah-xcm-counter', ahXcmCounterHandler);
+app.get('/api/rc-xcm-counter', rcXcmCounterHandler);
 
 const server = app.listen(port, () => {
   logger.info(`Server running on port ${port}`);
