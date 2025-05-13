@@ -3,6 +3,7 @@ import RcMigrationStatus from './components/RcMigrationStatus';
 import { AhMigrationStatus } from './components/AhMigrationStatus';
 import { AhXcmCounter } from './components/AhXcmCounter';
 import { RcXcmCounter } from './components/RcXcmCounter';
+import { RcBalances } from './components/RcBalances';
 import './App.css';
 
 function App() {
@@ -53,6 +54,7 @@ function App() {
             )}
             <RcMigrationStatus />
             <RcXcmCounter />
+            {/* <RcBalances /> */}
           </div>
           <div className="status-column">
             {ahIsConnected && (
