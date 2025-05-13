@@ -1,9 +1,11 @@
 import { db } from '../db';
-import { migrationStages } from '../db/schema';
+
 import { AbstractApi } from './abstractApi';
 import { processBlock } from './xcmProcessing';
 import { Log } from '../logging/Log';
 import { eventService } from './eventService';
+import { ApiPromise } from '@polkadot/api';
+import type { Block } from '@polkadot/types/interfaces';
 
 export async function runAhHeadsService() {
   const { logger } = Log;
@@ -25,7 +27,6 @@ export async function runAhHeadsService() {
       // Process block for XCM messages
       const xcmMessages = await processBlock(api, block);
       if (xcmMessages.length > 0) {
-        // TODO: Save to database
         logger.info('XCM Messages found:', JSON.stringify(xcmMessages, null, 2));
       }
     } catch (error) {
@@ -71,4 +72,36 @@ export async function runAhMigrationStageService() {
   });
 
   return unsubscribeMigrationStage;
+}
+
+export async function findXcmMessages(api: ApiPromise, block: Block) {
+  let upwardMessageSent = 0;
+  let downwardMessagesReceived = 0;
+  let downwardMessagesProcessed = 0;
+
+  const exts = block.extrinsics.filter((extrinsic) => {
+    return extrinsic.method.section === 'parachainSystem'
+  });
+
+  const apiAt = await api.at(block.hash);
+  const events = await apiAt.query.system.events();
+  
+  for (const record of events) {
+    const { event } = record;
+    if (event.section === 'parachainSystem' && event.method === 'UpwardMessageSent') {
+      upwardMessageSent++;
+    }
+    if (event.section === 'parachainSystem' && event.method === 'DownwardMessagesReceived') {
+      downwardMessagesReceived += Number(event.data[0].toString());
+    }
+    if (event.section === 'parachainSystem' && event.method === 'DownwardMessagesProcessed') {
+      downwardMessagesProcessed += downwardMessagesReceived;
+      downwardMessagesReceived = 0;
+    }
+  }
+
+  return {
+    upwardMessageSent,
+    downwardMessagesProcessed,
+  };
 }
