@@ -5,7 +5,7 @@ import type { VoidFn } from '@polkadot/api/types';
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { runRcHeadsService, runRcMigrationStageService } from './services/rcService';
-import { migrationStagesHandler } from './routes/migrationStages';
+import { rcMigrationStagesHandler } from './routes/rcMigrationStages';
 import { ahXcmCounterHandler } from './routes/ahXcmCounter';
 import { eventService } from './services/eventService';
 import { Log } from './logging/Log';
@@ -29,7 +29,7 @@ app.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok' });
 });
 
-app.get('/api/migration-stages', migrationStagesHandler);
+app.get('/api/rc-migration-stages', rcMigrationStagesHandler);
 app.get('/api/ah-xcm-counter', ahXcmCounterHandler);
 
 const server = app.listen(port, () => {

@@ -1,5 +1,6 @@
 import { AbstractApi } from '../src/services/abstractApi';
 import { processBlock } from '../src/services/xcmProcessing';
+import { findXcmMessages } from '../src/services/ahService';
 
 type ChainType = 'asset-hub' | 'relay-chain';
 
@@ -36,15 +37,12 @@ async function main() {
       Extrinsic Count: ${block.extrinsics.length}
     `);
 
-    // Process the block for XCM messages
-    const xcmMessages = await processBlock(api, block);
-    
-    if (xcmMessages.length > 0) {
-      console.log('\nXCM Messages found:');
-      console.log(JSON.stringify(xcmMessages, null, 2));
-    } else {
-      console.log('\nNo XCM messages found in this block');
-    }
+    const { upwardMessageSent, downwardMessagesProcessed } = await findXcmMessages(api, block);
+
+    console.log(`
+      Upward Message Sent: ${upwardMessageSent}
+      Downward Messages Processed: ${downwardMessagesProcessed}
+    `);
 
     // Disconnect from the API
     await api.disconnect();

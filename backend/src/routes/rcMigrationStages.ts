@@ -5,7 +5,7 @@ import { migrationStages } from '../db/schema';
 import { desc } from 'drizzle-orm';
 import { Log } from '../logging/Log';
 
-export const migrationStagesHandler: RequestHandler = async (req, res) => {
+export const rcMigrationStagesHandler: RequestHandler = async (req, res) => {
   const { logger } = Log;
   logger.info('New SSE connection established');
   
