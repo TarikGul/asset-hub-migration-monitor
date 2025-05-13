@@ -74,7 +74,7 @@ const MigrationStatus: React.FC = () => {
 
   return (
     <div className="migration-status">
-      <h2>Migration Status</h2>
+      <h2>Relay Chain</h2>
       <div className="stage-info">
         <div className="stage-name">{currentStage.stage}</div>
         <div className="stage-details">
