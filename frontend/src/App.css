@@ -1,22 +1,35 @@
 .app {
+  text-align: center;
   min-height: 100vh;
-  background: #fafafa;
+  background-color: #f0f2f5;
 }
 
 .app-header {
-  background: #2c3e50;
+  background-color: #282c34;
+  padding: 20px;
   color: white;
-  padding: 1rem 2rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .app-header h1 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 2em;
 }
 
 .app-main {
+  padding: 20px;
+}
+
+.migration-status-container {
+  display: flex;
+  gap: 20px;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
+}
+
+.status-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
 } 
