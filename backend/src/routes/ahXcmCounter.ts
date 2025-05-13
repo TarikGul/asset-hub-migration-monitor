@@ -45,7 +45,7 @@ export const ahXcmCounterHandler: RequestHandler = async (req, res) => {
 
   const sendUpdate = (data: any) => {
     try {
-      const eventData = `event: counterUpdate\ndata: ${JSON.stringify(data)}\n\n`;
+      const eventData = `event: ahXcmMessageCounter\ndata: ${JSON.stringify(data)}\n\n`;
       res.write(eventData);
     } catch (error) {
       logger.error('Error sending update:', error);

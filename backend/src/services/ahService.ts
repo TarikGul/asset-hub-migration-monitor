@@ -28,14 +28,19 @@ async function updateXcmMessageCounters(upwardMessageSent: number, downwardMessa
     });
 
     if (counter) {
-      eventService.emit('ahXcmMessageCounter', {
+      const eventData = {
         sourceChain: counter.sourceChain,
         destinationChain: counter.destinationChain,
         messagesSent: counter.messagesSent,
         messagesProcessed: counter.messagesProcessed,
         messagesFailed: counter.messagesFailed,
         lastUpdated: counter.lastUpdated,
-      });
+      };
+      
+      logger.info('Emitting ahXcmMessageCounter event with data:', eventData);
+      eventService.emit('ahXcmMessageCounter', eventData);
+    } else {
+      logger.warn('No counter found after update');
     }
 
     logger.info(`Updated XCM message counter for asset-hub -> relay-chain: ${upwardMessageSent} upward, ${downwardMessagesProcessed} downward messages processed`);

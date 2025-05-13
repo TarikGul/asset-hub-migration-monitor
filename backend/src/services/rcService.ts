@@ -36,12 +36,6 @@ export async function runRcHeadsService(data: RcHeadsServiceData): Promise<VoidF
         const signedBlock = await api.rpc.chain.getBlock(header.hash);
         const { block } = signedBlock;
 
-        logger.info(`
-          Block: #${block.header.number}
-          Hash: ${block.header.hash.toHex()}
-          Extrinsic Count: ${block.extrinsics.length}
-        `);
-
         // Process block for XCM messages
         const xcmMessages = await processBlock(api, block);
         if (xcmMessages.length > 0) {
