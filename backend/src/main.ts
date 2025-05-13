@@ -13,6 +13,8 @@ import { eventService } from './services/eventService';
 import { runAhMigrationStageService, runAhHeadsService, runAhXcmMessageCounterService } from './services/ahService';
 import { Log } from './logging/Log';
 import { rcXcmCounterHandler } from './routes/rcXcmCounter';
+import { rcHeadsHandler } from './routes/rcHeads';
+import { runRcFinalizedHeadsService } from './services/rcService';
 
 import { getConfig } from './config';
 
@@ -47,6 +49,7 @@ app.get('/api/rc-migration-stages', rcMigrationStagesHandler);
 app.get('/api/ah-migration-stages', ahMigrationStagesHandler);
 app.get('/api/ah-xcm-counter', ahXcmCounterHandler);
 app.get('/api/rc-xcm-counter', rcXcmCounterHandler);
+app.get('/api/rc-heads', rcHeadsHandler);
 
 const server = app.listen(port, () => {
   logger.info(`Server running on port ${port}`);
@@ -62,6 +65,14 @@ let cleanupAhMigrationStage: VoidFn | null = null;
 let cleanupAhHeads: VoidFn | null = null;
 let cleanupRcXcmMessageCounter: VoidFn | null = null;
 let cleanupAhXcmMessageCounter: VoidFn | null = null;
+let cleanupRcFinalizedHeads: VoidFn | null = null;
+
+// Start the RC finalized heads service
+runRcFinalizedHeadsService()
+  .then((result) => {
+    cleanupRcFinalizedHeads = result;
+  })
+  .catch(err => logger.error(err));
 
 runAhMigrationStageService()
   .then((result) => {
@@ -147,6 +158,11 @@ signals.forEach((signal) => {
     if (cleanupAhHeads) {
       logger.info('Cleaning up ah heads subscription...');
       cleanupAhHeads();
+    }
+
+    if (cleanupRcFinalizedHeads) {
+      logger.info('Cleaning up rc finalized heads subscription...');
+      cleanupRcFinalizedHeads();
     }
 
     server.close(() => {

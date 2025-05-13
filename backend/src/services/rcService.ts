@@ -16,6 +16,19 @@ interface RcHeadsServiceData {
   skipAndStart?: boolean;
 }
 
+export async function runRcFinalizedHeadsService() {
+  const { logger } = Log;
+  const api = await AbstractApi.getInstance().getRelayChainApi();
+
+  const unsubscribeFinalizedHeads = await api.rpc.chain.subscribeFinalizedHeads(async (header) => {
+    const blockNumber = header.number.toNumber();
+    logger.info(`New block #${blockNumber} detected`);
+    eventService.emit('rcNewHead', { blockNumber });
+  }) as unknown as VoidFn;
+
+  return unsubscribeFinalizedHeads;
+}
+
 export async function runRcHeadsService(data: RcHeadsServiceData): Promise<VoidFn> {
   const { logger } = Log;
   const api = await AbstractApi.getInstance().getRelayChainApi();
