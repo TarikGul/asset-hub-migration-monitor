@@ -14,7 +14,7 @@ async function main() {
     // Handle graceful shutdown
     const shutdown = async () => {
       console.log('Shutting down services...');
-      await ahService.unsubscribe();
+      await ahService();
       await rcService();
       process.exit(0);
     };

@@ -9,6 +9,7 @@ import { rcMigrationStagesHandler } from './routes/rcMigrationStages';
 import { ahMigrationStagesHandler } from './routes/ahMigrationStages';
 import { ahXcmCounterHandler } from './routes/ahXcmCounter';
 import { eventService } from './services/eventService';
+import { runAhMigrationStageService, runAhHeadsService } from './services/ahService';
 import { Log } from './logging/Log';
 
 import { getConfig } from './config';
@@ -44,6 +45,14 @@ const server = app.listen(port, () => {
 
 let cleanupMigrationStage: VoidFn | null = null;
 let cleanupHeads: VoidFn | null = null;
+let cleanupAhMigrationStage: VoidFn | null = null;
+let cleanupAhHeads: VoidFn | null = null;
+
+runAhMigrationStageService()
+  .then((result) => {
+    cleanupAhMigrationStage = result;
+  })
+  .catch(err => logger.error(err));
 
 // Start the migration stage service
 runRcMigrationStageService()
@@ -66,6 +75,7 @@ eventService.on('migrationScheduled', async (data) => {
   // Start new heads service with the scheduled block number
   try {
     cleanupHeads = await runRcHeadsService(data);
+    cleanupAhHeads = await runAhHeadsService();
     logger.info(`Started monitoring heads for scheduled block #${data.scheduledBlockNumber}`);
   } catch (error) {
     logger.error('Error starting heads service:', error);

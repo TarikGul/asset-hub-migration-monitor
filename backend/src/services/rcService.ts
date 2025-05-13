@@ -46,7 +46,6 @@ export async function runRcHeadsService(data: RcHeadsServiceData): Promise<VoidF
         const xcmMessages = await processBlock(api, block);
         if (xcmMessages.length > 0) {
           // TODO: Save to database
-          logger.info('XCM Messages found:', JSON.stringify(xcmMessages, null, 2));
         }
       } catch (error) {
         logger.info(`Error processing block: ${error}`);

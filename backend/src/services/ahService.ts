@@ -1,40 +1,30 @@
 import { db } from '../db';
 import { xcmMessageCounters } from '../db/schema';
-import { sql } from 'drizzle-orm';
+import { sql, eq } from 'drizzle-orm';
 
 import { AbstractApi } from './abstractApi';
 import { Log } from '../logging/Log';
 import { eventService } from './eventService';
 import { ApiPromise } from '@polkadot/api';
 import type { Block } from '@polkadot/types/interfaces';
+import { VoidFn } from '@polkadot/api/types';
 
 async function updateXcmMessageCounters(upwardMessageSent: number, downwardMessagesProcessed: number) {
   const { logger } = Log;
   
   try {
     // Update the AH->RC counter with processed messages
-    await db.insert(xcmMessageCounters)
-      .values({
-        sourceChain: 'asset-hub',
-        destinationChain: 'relay-chain',
-        messagesSent: 0,
-        messagesProcessed: upwardMessageSent + downwardMessagesProcessed,
-        messagesFailed: 0,
+    await db.update(xcmMessageCounters)
+      .set({
+        messagesProcessed: sql`${xcmMessageCounters.messagesProcessed} + ${downwardMessagesProcessed}`,
+        messagesSent: sql`${xcmMessageCounters.messagesSent} + ${upwardMessageSent}`,
+        lastUpdated: new Date(),
       })
-      .onConflictDoUpdate({
-        target: [xcmMessageCounters.sourceChain, xcmMessageCounters.destinationChain],
-        set: {
-          messagesProcessed: sql`${xcmMessageCounters.messagesProcessed} + ${upwardMessageSent + downwardMessagesProcessed}`,
-          lastUpdated: new Date(),
-        },
-      });
+      .where(eq(xcmMessageCounters.sourceChain, 'asset-hub'));
 
     // Get the updated counter
     const counter = await db.query.xcmMessageCounters.findFirst({
-      where: (counters, { and, eq }) => and(
-        eq(counters.sourceChain, 'asset-hub'),
-        eq(counters.destinationChain, 'relay-chain')
-      ),
+      where: (counters, { eq }) => eq(counters.sourceChain, 'asset-hub'),
     });
 
     if (counter) {
@@ -81,9 +71,7 @@ export async function runAhHeadsService() {
     }
   });
 
-  return {
-    unsubscribe
-  };
+  return unsubscribe
 }
 
 export async function runAhMigrationStageService() {
@@ -116,7 +104,7 @@ export async function runAhMigrationStageService() {
     } catch (error) {
       logger.error('Error processing migration stage:', error);
     }
-  });
+  }) as unknown as VoidFn;
 
   return unsubscribeMigrationStage;
 }
