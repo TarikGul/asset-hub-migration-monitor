@@ -198,3 +198,16 @@ export async function runAhXcmMessageCounterService() {
 
   return unsubscribeXcmMessages;
 }
+
+export async function runAhFinalizedHeadsService() {
+  const { logger } = Log;
+  const api = await AbstractApi.getInstance().getAssetHubApi();
+
+  const unsubscribeFinalizedHeads = await api.rpc.chain.subscribeFinalizedHeads(async (header) => {
+    const blockNumber = header.number.toNumber();
+    logger.info(`Asset Hub: New block #${blockNumber} detected`);
+    eventService.emit('ahNewHead', { blockNumber });
+  }) as unknown as VoidFn;
+
+  return unsubscribeFinalizedHeads;
+}
