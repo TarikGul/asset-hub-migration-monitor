@@ -11,8 +11,8 @@ import { eventService } from './eventService';
 import { Log } from '../logging/Log';
 
 interface RcHeadsServiceData {
-  scheduledBlockNumber: u32;
-  skipAndStart: boolean;
+  scheduledBlockNumber?: u32;
+  skipAndStart?: boolean;
 }
 
 export async function runRcHeadsService(data: RcHeadsServiceData): Promise<VoidFn> {

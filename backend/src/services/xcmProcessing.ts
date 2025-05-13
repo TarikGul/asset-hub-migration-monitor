@@ -1,7 +1,8 @@
 import { ApiPromise } from '@polkadot/api';
 import type { Block } from '@polkadot/types/interfaces';
 import type { GenericExtrinsic } from '@polkadot/types';
-import type { AnyTuple, Codec, Registry } from '@polkadot/types/types';
+import type { AnyJson, AnyTuple, Codec, Registry } from '@polkadot/types/types';
+import type { XcmVersionedXcm } from '@polkadot/types/lookup';
 import { GenericCall, Struct } from '@polkadot/types';
 import { Log } from '../logging/Log';
 import {
@@ -17,7 +18,14 @@ const { logger } = Log;
  */
 export async function decodeXcmMessage(api: ApiPromise, message: any): Promise<string> {
   try {    
-    const xcmInstructions = api.createType('XcmVersionedXcm', message);
+    const xcmInstructions: XcmVersionedXcm = api.createType('XcmVersionedXcm', message);
+    // if ((xcmInstructions as unknown as { isV3: boolean }).isV3) {
+    //   let xcm = xcmInstructions.asV3;
+    //   if (xcm) {
+
+    //   };
+    // }
+    // console.log('xcmInstructions', api.registry.createType('Call', (xcmInstructions.toHuman() as { V3: [{}, { Transact: { call: { encoded: string} } }] }).V3![1].Transact.call.encoded).toJSON());
     return JSON.stringify(xcmInstructions.toHuman(), null, 2);
   } catch (error) {
     logger.error('Error decoding XCM message:', error);
