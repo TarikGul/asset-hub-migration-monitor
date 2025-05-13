@@ -82,7 +82,7 @@ export async function runRcMigrationStageService(): Promise<VoidFn> {
         logger.info(`Migration scheduled for block #${scheduledBlock}`);
       }
 
-      if (!migrationStage.isPending || !migrationStage.isScheduled || !isMigrationScheduled) {
+      if (!migrationStage.isPending) {
         eventService.emit('migrationScheduled', {
           skipAndStart: true
         });

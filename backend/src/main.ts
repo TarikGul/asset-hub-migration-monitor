@@ -5,12 +5,12 @@ import type { VoidFn } from '@polkadot/api/types';
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { initializeDb } from './db/initializeDb';
-import { runRcHeadsService, runRcMigrationStageService } from './services/rcService';
+import { runRcHeadsService, runRcMigrationStageService, runRcXcmMessageCounterService } from './services/rcService';
 import { rcMigrationStagesHandler } from './routes/rcMigrationStages';
 import { ahMigrationStagesHandler } from './routes/ahMigrationStages';
 import { ahXcmCounterHandler } from './routes/ahXcmCounter';
 import { eventService } from './services/eventService';
-import { runAhMigrationStageService, runAhHeadsService } from './services/ahService';
+import { runAhMigrationStageService, runAhHeadsService, runAhXcmMessageCounterService } from './services/ahService';
 import { Log } from './logging/Log';
 import { rcXcmCounterHandler } from './routes/rcXcmCounter';
 
@@ -20,6 +20,7 @@ const { logger } = Log;
 
 const app = express();
 const port = getConfig().port;
+const DISABLE_HEADS_SERVICE = true;
 
 // Initialize the database
 initializeDb()
@@ -59,6 +60,8 @@ let cleanupMigrationStage: VoidFn | null = null;
 let cleanupHeads: VoidFn | null = null;
 let cleanupAhMigrationStage: VoidFn | null = null;
 let cleanupAhHeads: VoidFn | null = null;
+let cleanupRcXcmMessageCounter: VoidFn | null = null;
+let cleanupAhXcmMessageCounter: VoidFn | null = null;
 
 runAhMigrationStageService()
   .then((result) => {
@@ -73,24 +76,40 @@ runRcMigrationStageService()
   })
   .catch(err => logger.error(err));
 
+runRcXcmMessageCounterService()
+  .then((result) => {
+    cleanupRcXcmMessageCounter = result;
+  })
+  .catch(err => logger.error(err));
+
+runAhXcmMessageCounterService()
+  .then((result) => {
+    cleanupAhXcmMessageCounter = result;
+  })
+  .catch(err => logger.error(err));
+
 // Listen for the migrationScheduled event
 eventService.on('migrationScheduled', async (data) => {
   logger.info('Migration scheduled event received:', data);
   
-  // Clean up existing heads subscription if it exists
-  if (cleanupHeads) {
-    logger.info('Cleaning up existing heads subscription...');
-    cleanupHeads();
-    cleanupHeads = null;
-  }
+  if (DISABLE_HEADS_SERVICE) {
+    logger.info('Heads service is disabled. Skipping...');
+  } else {
+    // Clean up existing heads subscription if it exists
+    if (cleanupHeads) {
+      logger.info('Cleaning up existing heads subscription...');
+      cleanupHeads();
+      cleanupHeads = null;
+    }
 
-  // Start new heads service with the scheduled block number
-  try {
-    cleanupHeads = await runRcHeadsService(data);
-    cleanupAhHeads = await runAhHeadsService();
-    logger.info(`Started monitoring heads for scheduled block #${data.scheduledBlockNumber}`);
-  } catch (error) {
-    logger.error('Error starting heads service:', error);
+    // Start new heads service with the scheduled block number
+    try {
+      cleanupHeads = await runRcHeadsService(data);
+      cleanupAhHeads = await runAhHeadsService();
+      logger.info(`Started monitoring heads for scheduled block #${data.scheduledBlockNumber}`);
+    } catch (error) {
+      logger.error('Error starting heads service:', error);
+    }
   }
 });
 
@@ -104,11 +123,31 @@ signals.forEach((signal) => {
       logger.info('Cleaning up migration stage subscription...');
       cleanupMigrationStage();
     }
+    
+    if (cleanupAhHeads) {
+      logger.info('Cleaning up ah heads subscription...');
+      cleanupAhHeads();
+    }
+
+    if (cleanupRcXcmMessageCounter) {
+      logger.info('Cleaning up rc xcm message counter subscription...');
+      cleanupRcXcmMessageCounter();
+    }
+
+    if (cleanupAhXcmMessageCounter) {
+      logger.info('Cleaning up ah xcm message counter subscription...');
+      cleanupAhXcmMessageCounter();
+    }
 
     if (cleanupHeads) {
       logger.info('Cleaning up heads subscription...');
       cleanupHeads();
     } 
+
+    if (cleanupAhHeads) {
+      logger.info('Cleaning up ah heads subscription...');
+      cleanupAhHeads();
+    }
 
     server.close(() => {
       logger.info('Server closed. Exiting...');
