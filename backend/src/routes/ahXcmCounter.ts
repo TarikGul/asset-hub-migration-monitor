@@ -1,7 +1,6 @@
 import { RequestHandler } from 'express';
 import { eventService } from '../services/eventService';
 import { db } from '../db';
-import { xcmMessageCounters } from '../db/schema';
 import { Log } from '../logging/Log';
 
 export const ahXcmCounterHandler: RequestHandler = async (req, res) => {

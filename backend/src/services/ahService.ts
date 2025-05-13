@@ -126,10 +126,6 @@ export async function findXcmMessages(api: ApiPromise, block: Block) {
   let downwardMessagesReceived = 0;
   let downwardMessagesProcessed = 0;
 
-  const exts = block.extrinsics.filter((extrinsic) => {
-    return extrinsic.method.section === 'parachainSystem'
-  });
-
   const apiAt = await api.at(block.hash);
   const events = await apiAt.query.system.events();
   

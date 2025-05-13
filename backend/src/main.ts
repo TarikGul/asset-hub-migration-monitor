@@ -6,6 +6,7 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { runRcHeadsService, runRcMigrationStageService } from './services/rcService';
 import { rcMigrationStagesHandler } from './routes/rcMigrationStages';
+import { ahMigrationStagesHandler } from './routes/ahMigrationStages';
 import { ahXcmCounterHandler } from './routes/ahXcmCounter';
 import { eventService } from './services/eventService';
 import { Log } from './logging/Log';
@@ -30,6 +31,7 @@ app.get('/health', (_req: Request, res: Response) => {
 });
 
 app.get('/api/rc-migration-stages', rcMigrationStagesHandler);
+app.get('/api/ah-migration-stages', ahMigrationStagesHandler);
 app.get('/api/ah-xcm-counter', ahXcmCounterHandler);
 
 const server = app.listen(port, () => {
