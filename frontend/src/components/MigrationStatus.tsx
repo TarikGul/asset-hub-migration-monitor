@@ -35,7 +35,7 @@ const MigrationStatus: React.FC = () => {
     });
 
     // Handle stage updates
-    sse.addEventListener('stageUpdate', (event) => {
+    sse.addEventListener('rcStageUpdate', (event) => {
       try {
         const data = JSON.parse(event.data);
         console.log('Received stage update:', data);

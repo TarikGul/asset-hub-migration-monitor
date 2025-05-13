@@ -95,7 +95,7 @@ export async function runRcMigrationStageService(): Promise<VoidFn> {
         logger.info('Migration already started, enabling skip and start...');
       }
 
-      eventService.emit('stageUpdate', {
+      eventService.emit('rcStageUpdate', {
         stage: migrationStage.type,
         details: migrationStage.toJSON(),
         blockNumber: header.number.toNumber(),

@@ -43,16 +43,16 @@ export const migrationStagesHandler: RequestHandler = async (req, res) => {
 
   const sendUpdate = (data: any) => {
     try {
-      const eventData = `event: stageUpdate\ndata: ${JSON.stringify(data)}\n\n`;
+      const eventData = `event: rcStageUpdate\ndata: ${JSON.stringify(data)}\n\n`;
       res.write(eventData);
     } catch (error) {
       logger.error('Error sending update:', error);
     }
   };
 
-  eventService.on('stageUpdate', sendUpdate);
+  eventService.on('rcStageUpdate', sendUpdate);
 
   req.on('close', () => {
-    eventService.off('stageUpdate', sendUpdate);
+    eventService.off('rcStageUpdate', sendUpdate);
   });
 }; 
