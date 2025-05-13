@@ -1,5 +1,5 @@
 import { db } from '../db';
-import { xcmMessageCounters } from '../db/schema';
+import { xcmMessageCounters, migrationStages } from '../db/schema';
 import { sql, eq } from 'drizzle-orm';
 
 import { AbstractApi } from './abstractApi';
@@ -82,7 +82,7 @@ export async function runAhMigrationStageService() {
     try {
       const header = await api.rpc.chain.getHeader();
       
-      await db.insert(migrationStage).values({
+      await db.insert(migrationStages).values({
         stage: migrationStage.type,
         details: JSON.stringify(migrationStage.toJSON()),
         blockNumber: header.number.toNumber(),
@@ -97,7 +97,7 @@ export async function runAhMigrationStageService() {
         timestamp: new Date().toISOString(),
       });
 
-      logger.info('Asset HubMigration stage updated:', {
+      logger.info('Asset Hub Migration stage updated:', {
         stage: migrationStage.type,
         blockNumber: header.number.toNumber(),
       });
