@@ -2,8 +2,8 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./build-scripts",
-    "rootDir": "./scripts"
+    "rootDir": "."
   },
   "include": ["scripts/**/*"],
-  "exclude": ["node_modules", "build", "src"]
+  "exclude": ["node_modules", "build", "build-scripts", "src", "**/*.test.ts", "**/*.spec.ts"]
 } 

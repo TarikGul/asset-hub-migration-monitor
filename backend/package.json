@@ -9,8 +9,8 @@
     "migrate": "drizzle-kit generate:sqlite",
     "push": "drizzle-kit push:sqlite",
     "build:scripts": "rimraf ./build-scripts && tsc -p tsconfig.scripts.json",
-    "test:services": "yarn build:scripts && node ./build-scripts/testServices.js",
-    "test:xcmProcessing": "yarn build:scripts && node ./build/scripts/testBlock.js"
+    "test:services": "yarn build:scripts && node ./build-scripts/scripts/testServices.js",
+    "test:xcmProcessing": "yarn build:scripts && node ./build-scripts/scripts/testBlock.js"
   },
   "keywords": [],
   "author": "",
