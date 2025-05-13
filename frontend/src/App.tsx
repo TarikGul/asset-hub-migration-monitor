@@ -2,6 +2,7 @@ import React from 'react';
 import RcMigrationStatus from './components/RcMigrationStatus';
 import { AhMigrationStatus } from './components/AhMigrationStatus';
 import { AhXcmCounter } from './components/AhXcmCounter';
+import { RcXcmCounter } from './components/RcXcmCounter';
 import './App.css';
 
 function App() {
@@ -14,6 +15,7 @@ function App() {
         <div className="migration-status-container">
           <div className="status-column">
             <RcMigrationStatus />
+            <RcXcmCounter />
           </div>
           <div className="status-column">
             <AhMigrationStatus />
