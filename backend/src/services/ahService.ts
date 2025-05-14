@@ -7,9 +7,10 @@ import type { u32 } from '@polkadot/types';
 import { AbstractApi } from './abstractApi';
 import { Log } from '../logging/Log';
 import { eventService } from './eventService';
-import { ApiPromise } from '@polkadot/api';
+import { ApiPromise, WsProvider } from '@polkadot/api';
 import type { Block } from '@polkadot/types/interfaces';
 import { VoidFn } from '@polkadot/api/types';
+import { getConfig } from '../config';
 
 async function updateXcmMessageCountersViaEvents(upwardMessageSent: number, downwardMessagesProcessed: number) {
   const { logger } = Log;
@@ -51,35 +52,28 @@ async function updateXcmMessageCountersViaEvents(upwardMessageSent: number, down
   }
 }
 
-export async function runAhHeadsService() {
+export const runAhHeadsService = async (): Promise<VoidFn> => {
+  const provider = new WsProvider(getConfig().assetHubUrl);
+  const api = await ApiPromise.create({ provider });
   const { logger } = Log;
-  const api = await AbstractApi.getInstance().getAssetHubApi();
+  logger.info('Connected to Asset Hub');
 
-  const unsubscribe = await api.rpc.chain.subscribeFinalizedHeads(async (header) => {
-    logger.info(`New block #${header.number} detected, fetching complete block...`);
+  const unsubscribe = await api.rpc.chain.subscribeFinalizedHeads((header) => {
+    const blockNumber = header.number.toNumber();
+    const blockHash = header.hash.toString();
 
-    try {
-      const signedBlock = await api.rpc.chain.getBlock(header.hash);
-      const { block } = signedBlock;
+    logger.info(`New AH finalized head: #${blockNumber}`);
 
-      logger.info(`
-        Block: #${block.header.number}
-        Hash: ${block.header.hash.toHex()}
-        Extrinsic Count: ${block.extrinsics.length}
-      `);
-
-      // Process block for XCM messages
-      const { upwardMessageSent, downwardMessagesProcessed } = await findXcmMessages(api, block);
-      if (upwardMessageSent > 0 || downwardMessagesProcessed > 0) {
-        await updateXcmMessageCountersViaEvents(upwardMessageSent, downwardMessagesProcessed);
-      }
-    } catch (error) {
-      logger.error(`Error processing block: ${error}`);
-    }
+    // Emit the head event through eventService
+    eventService.emit('ahHead', {
+      blockNumber,
+      blockHash,
+      timestamp: new Date().toISOString()
+    });
   });
 
-  return unsubscribe
-}
+  return unsubscribe;
+};
 
 export async function runAhMigrationStageService() {
   const { logger } = Log;
@@ -200,14 +194,24 @@ export async function runAhXcmMessageCounterService() {
 }
 
 export async function runAhFinalizedHeadsService() {
+  const provider = new WsProvider(getConfig().assetHubUrl);
+  const api = await ApiPromise.create({ provider });
   const { logger } = Log;
-  const api = await AbstractApi.getInstance().getAssetHubApi();
+  logger.info('Connected to Asset Hub for finalized heads');
 
-  const unsubscribeFinalizedHeads = await api.rpc.chain.subscribeFinalizedHeads(async (header) => {
+  const unsubscribe = await api.rpc.chain.subscribeFinalizedHeads((header) => {
     const blockNumber = header.number.toNumber();
-    logger.info(`Asset Hub: New block #${blockNumber} detected`);
-    eventService.emit('ahNewHead', { blockNumber });
-  }) as unknown as VoidFn;
+    const blockHash = header.hash.toString();
 
-  return unsubscribeFinalizedHeads;
+    logger.info(`New AH finalized head: #${blockNumber}`);
+
+    // Emit the head event through eventService
+    eventService.emit('ahHead', {
+      blockNumber,
+      blockHash,
+      timestamp: new Date().toISOString()
+    });
+  });
+
+  return unsubscribe;
 }

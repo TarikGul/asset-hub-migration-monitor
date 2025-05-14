@@ -18,6 +18,7 @@ import { runRcFinalizedHeadsService } from './services/rcService';
 import { ahHeadsHandler } from './routes/ahHeads';
 import { runAhFinalizedHeadsService } from './services/ahService';
 import { rcBalancesHandler } from './routes/rcBalances';
+import { combinedHeadsHandler } from './routes/combinedHeads';
 
 import { getConfig } from './config';
 
@@ -55,6 +56,7 @@ app.get('/api/rc-xcm-counter', rcXcmCounterHandler);
 app.get('/api/rc-heads', rcHeadsHandler);
 app.get('/api/ah-heads', ahHeadsHandler);
 app.get('/api/rc-balances', rcBalancesHandler);
+app.get('/api/combined-heads', combinedHeadsHandler);
 
 const server = app.listen(port, () => {
   logger.info(`Server running on port ${port}`);

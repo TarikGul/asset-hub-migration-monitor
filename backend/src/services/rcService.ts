@@ -10,6 +10,8 @@ import { eventService } from './eventService';
 import { xcmMessageCounters } from '../db/schema';
 import { Log } from '../logging/Log';
 import { eq } from 'drizzle-orm';
+import { ApiPromise, WsProvider } from '@polkadot/api';
+import { getConfig } from '../config';
 
 interface RcHeadsServiceData {
   scheduledBlockNumber?: u32;
@@ -17,55 +19,55 @@ interface RcHeadsServiceData {
 }
 
 export async function runRcFinalizedHeadsService() {
+  const provider = new WsProvider(getConfig().relayChainUrl);
+  const api = await ApiPromise.create({ provider });
   const { logger } = Log;
-  const api = await AbstractApi.getInstance().getRelayChainApi();
+  logger.info('Connected to Relay Chain for finalized heads');
 
-  const unsubscribeFinalizedHeads = await api.rpc.chain.subscribeFinalizedHeads(async (header) => {
+  const unsubscribe = await api.rpc.chain.subscribeFinalizedHeads((header) => {
     const blockNumber = header.number.toNumber();
-    logger.info(`New block #${blockNumber} detected`);
-    eventService.emit('rcNewHead', { blockNumber });
-  }) as unknown as VoidFn;
+    const blockHash = header.hash.toString();
 
-  return unsubscribeFinalizedHeads;
+    logger.info(`New RC finalized head: #${blockNumber}`);
+
+    // Emit the head event through eventService
+    eventService.emit('rcHead', {
+      blockNumber,
+      blockHash,
+      timestamp: new Date().toISOString()
+    });
+  });
+
+  return unsubscribe;
 }
 
-export async function runRcHeadsService(data: RcHeadsServiceData): Promise<VoidFn> {
+export const runRcHeadsService = async (scheduledBlockNumber?: number): Promise<VoidFn> => {
   const { logger } = Log;
-  const api = await AbstractApi.getInstance().getRelayChainApi();
-  let isProcessingXcm = false;
+  const provider = new WsProvider(getConfig().relayChainUrl);
+  const api = await ApiPromise.create({ provider });
+  logger.info('Connected to Relay Chain');
 
-  const unsubscribeHeads = await api.rpc.chain.subscribeFinalizedHeads(async (header) => {
-    logger.info(`New block #${header.number} detected, fetching complete block...`);
+  const unsubscribe = await api.rpc.chain.subscribeFinalizedHeads((header) => {
+    const blockNumber = header.number.toNumber();
+    const blockHash = header.hash.toString();
 
-    if (data.scheduledBlockNumber && header.number.toBn().gte(data.scheduledBlockNumber.toBn())) {
-      isProcessingXcm = true
-      logger.info(`Starting XCM message processing from block #${header.number}`);
-    } else if (data.skipAndStart) {
-      isProcessingXcm = true;
-      logger.info(`Starting XCM message processing from block #${header.number}`);
-    }
+    logger.info(`New RC finalized head: #${blockNumber}`);
 
-    if (isProcessingXcm) {
-      try {
-        const signedBlock = await api.rpc.chain.getBlock(header.hash);
-        const { block } = signedBlock;
+    // Emit the head event through eventService
+    eventService.emit('rcHead', {
+      blockNumber,
+      blockHash,
+      timestamp: new Date().toISOString()
+    });
 
-        // Process block for XCM messages
-        const xcmMessages = await processBlock(api, block);
-        if (xcmMessages.length > 0) {
-          // TODO: Save to database
-          // This will be pertinent when we want to track the contents of the messages.
-        }
-      } catch (error) {
-        logger.info(`Error processing block: ${error}`);
-      }
-    } else if (data.scheduledBlockNumber !== null) {
-      logger.info(`Waiting for scheduled block #${data.scheduledBlockNumber}, current block #${header.number}`);
+    if (scheduledBlockNumber && blockNumber >= scheduledBlockNumber) {
+      logger.info(`Reached scheduled block #${scheduledBlockNumber}`);
+      unsubscribe();
     }
   });
 
-  return unsubscribeHeads;
-}
+  return unsubscribe;
+};
 
 export async function runRcMigrationStageService(): Promise<VoidFn> {
   const { logger } = Log;
