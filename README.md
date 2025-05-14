@@ -15,10 +15,10 @@ Before running the application, you need to set the following environment variab
 
 ```bash
 # Asset Hub WebSocket URL
-export ASSET_HUB_WS_URL="wss://your-asset-hub-node.io"
+export ASSET_HUB_URL="wss://your-asset-hub-node.io"
 
 # Relay Chain WebSocket URL
-export RELAY_CHAIN_WS_URL="wss://your-relay-chain-node.io"
+export RELAY_CHAIN_URL="wss://your-relay-chain-node.io"
 ```
 
 ## Installation
@@ -26,7 +26,7 @@ export RELAY_CHAIN_WS_URL="wss://your-relay-chain-node.io"
 1. Clone the repository:
 ```bash
 git clone git@github.com:TarikGul/asset-hub-migration-monitor.git
-cd ah-monitoring
+cd asset-hub-migration-monitor
 ```
 
 2. Install dependencies and start the application:
