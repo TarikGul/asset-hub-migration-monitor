@@ -8,34 +8,36 @@ import './App.css';
 
 function App() {
   const [rcBlockNumber, setRcBlockNumber] = useState<number | null>(null);
-  const [rcIsConnected, setRcIsConnected] = useState(false);
   const [ahBlockNumber, setAhBlockNumber] = useState<number | null>(null);
-  const [ahIsConnected, setAhIsConnected] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    const eventSource = new EventSource('http://localhost:8080/api/rc-heads');
+    const eventSource = new EventSource('http://localhost:8080/api/combined-heads');
+    
     eventSource.addEventListener('connected', (event) => {
       const data = JSON.parse(event.data);
-      if (data.connected) setRcIsConnected(true);
+      if (data.connected) setIsConnected(true);
     });
-    eventSource.addEventListener('newHead', (event) => {
+
+    eventSource.addEventListener('rcHead', (event) => {
       const data = JSON.parse(event.data);
       if (data.blockNumber) setRcBlockNumber(data.blockNumber);
     });
-    return () => { eventSource.close(); };
-  }, []);
 
-  useEffect(() => {
-    const eventSource = new EventSource('http://localhost:8080/api/ah-heads');
-    eventSource.addEventListener('connected', (event) => {
-      const data = JSON.parse(event.data);
-      if (data.connected) setAhIsConnected(true);
-    });
-    eventSource.addEventListener('newHead', (event) => {
+    eventSource.addEventListener('ahHead', (event) => {
       const data = JSON.parse(event.data);
       if (data.blockNumber) setAhBlockNumber(data.blockNumber);
     });
-    return () => { eventSource.close(); };
+
+    eventSource.onerror = (err) => {
+      console.error('SSE Error:', err);
+      eventSource.close();
+      setIsConnected(false);
+    };
+
+    return () => {
+      eventSource.close();
+    };
   }, []);
 
   return (
@@ -46,7 +48,7 @@ function App() {
       <main className="app-main">
         <div className="migration-status-container">
           <div className="status-column">
-            {rcIsConnected && (
+            {isConnected && (
               <div className="block-number-display">
                 <span>RC Finalized Head:</span>
                 <span className="number">{rcBlockNumber?.toLocaleString() ?? 'Waiting...'}</span>
@@ -54,10 +56,10 @@ function App() {
             )}
             <RcMigrationStatus />
             <RcXcmCounter />
-            {/* <RcBalances /> */}
+            <RcBalances />
           </div>
           <div className="status-column">
-            {ahIsConnected && (
+            {isConnected && (
               <div className="block-number-display">
                 <span>AH Finalized Head:</span>
                 <span className="number">{ahBlockNumber?.toLocaleString() ?? 'Waiting...'}</span>
