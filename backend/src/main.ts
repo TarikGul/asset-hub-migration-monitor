@@ -6,19 +6,12 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { initializeDb } from './db/initializeDb';
 import { runRcHeadsService, runRcMigrationStageService, runRcXcmMessageCounterService, runRcBalancesService } from './services/rcService';
-import { rcMigrationStagesHandler } from './routes/rcMigrationStages';
-import { ahMigrationStagesHandler } from './routes/ahMigrationStages';
-import { ahXcmCounterHandler } from './routes/ahXcmCounter';
 import { eventService } from './services/eventService';
 import { runAhMigrationStageService, runAhHeadsService, runAhXcmMessageCounterService } from './services/ahService';
 import { Log } from './logging/Log';
-import { rcXcmCounterHandler } from './routes/rcXcmCounter';
-import { rcHeadsHandler } from './routes/rcHeads';
 import { runRcFinalizedHeadsService } from './services/rcService';
-import { ahHeadsHandler } from './routes/ahHeads';
 import { runAhFinalizedHeadsService } from './services/ahService';
-import { rcBalancesHandler } from './routes/rcBalances';
-import { combinedHeadsHandler } from './routes/combinedHeads';
+import { updatesHandler } from './routes/updates';
 
 import { getConfig } from './config';
 
@@ -37,34 +30,16 @@ initializeDb()
     logger.error('Error initializing database:', err);
   });
 
-// Enable CORS for all routes
-app.use(cors({
-  origin: 'http://localhost:3000',
-  methods: ['GET', 'POST'],
-  allowedHeaders: ['Content-Type'],
-  credentials: true
-}));
+// Enable CORS
+app.use(cors());
 
+// Health check endpoint
 app.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok' });
 });
 
-app.get('/api/rc-migration-stages', rcMigrationStagesHandler);
-app.get('/api/ah-migration-stages', ahMigrationStagesHandler);
-app.get('/api/ah-xcm-counter', ahXcmCounterHandler);
-app.get('/api/rc-xcm-counter', rcXcmCounterHandler);
-app.get('/api/rc-heads', rcHeadsHandler);
-app.get('/api/ah-heads', ahHeadsHandler);
-app.get('/api/rc-balances', rcBalancesHandler);
-app.get('/api/combined-heads', combinedHeadsHandler);
-
-const server = app.listen(port, () => {
-  logger.info(`Server running on port ${port}`);
-  logger.info('Connected to:', {
-    assetHub: getConfig().assetHubUrl,
-    relayChain: getConfig().relayChainUrl,
-  });
-});
+// Consolidated SSE endpoint
+app.get('/api/updates', updatesHandler);
 
 let cleanupMigrationStage: VoidFn | null = null;
 let cleanupHeads: VoidFn | null = null;
@@ -203,5 +178,13 @@ signals.forEach((signal) => {
       logger.error('Forced exit after timeout');
       process.exit(1);
     }, 5000);
+  });
+});
+
+const server = app.listen(port, () => {
+  logger.info(`Server running on port ${port}`);
+  logger.info('Connected to:', {
+    assetHub: getConfig().assetHubUrl,
+    relayChain: getConfig().relayChainUrl,
   });
 });
