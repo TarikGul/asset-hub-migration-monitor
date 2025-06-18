@@ -16,3 +16,5 @@ sqlite.db
 
 # Logs
 /logs
+
+.yarn/install-state.gz
