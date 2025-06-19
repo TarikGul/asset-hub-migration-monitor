@@ -66,6 +66,40 @@
             font-size: 0.875rem;
         }
         
+        .finalized-heads {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+        
+        .head-display {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            background-color: var(--light-bg);
+            border-radius: 6px;
+            font-size: 0.875rem;
+        }
+        
+        .head-label {
+            color: var(--text-light);
+            font-weight: 500;
+        }
+        
+        .head-value {
+            color: var(--text);
+            font-weight: 600;
+            font-family: 'Roboto Mono', monospace;
+        }
+        
+        .head-status {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--success);
+        }
+        
         .refresh-btn {
             background-color: var(--primary);
             color: white;
@@ -486,13 +520,18 @@
         </div>
         <div class="header-info">
             <span class="timestamp">Last updated: April 15, 2025 10:32:41 UTC</span>
-            <button class="refresh-btn">
-                <span>Refresh</span>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M2 12C2 16.4183 5.58172 20 10 20C14.4183 20 18 16.4183 18 12C18 7.58172 14.4183 4 10 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    <path d="M10 8L6 4L10 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-            </button>
+            <div class="finalized-heads">
+                <div class="head-display">
+                    <div class="head-status"></div>
+                    <span class="head-label">RC Finalized:</span>
+                    <span class="head-value">12,345,678</span>
+                </div>
+                <div class="head-display">
+                    <div class="head-status"></div>
+                    <span class="head-label">AH Finalized:</span>
+                    <span class="head-value">12,345,123</span>
+                </div>
+            </div>
         </div>
     </header>
     
