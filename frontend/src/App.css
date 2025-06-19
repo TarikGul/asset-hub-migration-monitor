@@ -1,18 +1,91 @@
+:root {
+  --primary: #E6007A;
+  --primary-light: #ff6eb4;
+  --secondary: #172026;
+  --light-bg: #f5f6fa;
+  --border: #e1e5eb;
+  --success: #46c93a;
+  --warning: #ffb800;
+  --danger: #ff2e2e;
+  --text: #172026;
+  --text-light: #6C7A89;
+  --white: #ffffff;
+}
+
 .app {
   text-align: center;
   min-height: 100vh;
   background-color: #f0f2f5;
 }
 
-.app-header {
-  background-color: #282c34;
-  padding: 20px;
-  color: white;
+header {
+  background-color: var(--white);
+  padding: 1.25rem 2rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.app-header h1 {
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.logo img {
+  height: 32px;
+}
+
+.logo h1 {
+  font-size: 1.25rem;
+  font-weight: 600;
   margin: 0;
-  font-size: 2em;
+}
+
+.header-info {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.timestamp {
+  color: var(--text-light);
+  font-size: 0.875rem;
+}
+
+.finalized-heads {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.head-display {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background-color: var(--light-bg);
+  border-radius: 6px;
+  font-size: 0.875rem;
+}
+
+.head-label {
+  color: var(--text-light);
+  font-weight: 500;
+}
+
+.head-value {
+  color: var(--text);
+  font-weight: 600;
+  font-family: 'Roboto Mono', monospace;
+}
+
+.head-status {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--success);
 }
 
 .app-main {
