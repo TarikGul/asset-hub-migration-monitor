@@ -1,9 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import RcMigrationStatus from './components/RcMigrationStatus';
-import { AhMigrationStatus } from './components/AhMigrationStatus';
-import { AhXcmCounter } from './components/AhXcmCounter';
-import { RcXcmCounter } from './components/RcXcmCounter';
-import { RcBalances } from './components/RcBalances';
+import MigrationStatus from './components/MigrationStatus';
+import XcmMessageMetrics from './components/XcmMessageMetrics';
 import { useEventSource } from './hooks/useEventSource';
 import type { EventType } from './hooks/useEventSource';
 import './App.css';
@@ -45,18 +42,9 @@ function App() {
           </div>
         </div>
       </header>
-      <main className="app-main">
-        <div className="migration-status-container">
-          <div className="status-column">
-            <RcMigrationStatus />
-            <RcXcmCounter />
-            <RcBalances />
-          </div>
-          <div className="status-column">
-            <AhMigrationStatus />
-            <AhXcmCounter />
-          </div>
-        </div>
+      <main>
+        <MigrationStatus />
+        <XcmMessageMetrics />
       </main>
     </div>
   );

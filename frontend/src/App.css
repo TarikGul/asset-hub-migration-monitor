@@ -92,6 +92,243 @@ header {
   padding: 20px;
 }
 
+main {
+  padding: 2rem;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 1.5rem;
+}
+
+.card {
+  background-color: var(--white);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+
+.card-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.card-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.migration-status {
+  grid-column: span 8;
+}
+
+.xcm-messages {
+  grid-column: span 4;
+}
+
+/* Stage indicator */
+.stage-display {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.stage-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.stage-description {
+  color: var(--text-light);
+  font-size: 0.875rem;
+}
+
+/* Progress bar */
+.progress-container {
+  margin-bottom: 1.5rem;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.progress-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.progress-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.progress-bar {
+  height: 8px;
+  width: 100%;
+  background-color: var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: var(--primary);
+  border-radius: 4px;
+  width: 0%;
+}
+
+/* Timeline */
+.timeline {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  margin-top: 2rem;
+  padding-top: 16px;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  top: 16px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: var(--border);
+  z-index: 0;
+}
+
+.timeline-point {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+.point-marker {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: var(--white);
+  border: 2px solid var(--primary);
+  margin-bottom: 8px;
+}
+
+.point-marker.completed {
+  background-color: var(--primary);
+}
+
+.point-label {
+  font-size: 0.75rem;
+  color: var(--text-light);
+  text-align: center;
+  max-width: 80px;
+}
+
+/* Health indicators */
+.health-indicators {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.health-indicator {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: 6px;
+  background-color: var(--light-bg);
+}
+
+.indicator-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.dot-green {
+  background-color: var(--success);
+}
+
+.dot-yellow {
+  background-color: var(--warning);
+}
+
+.dot-red {
+  background-color: var(--danger);
+}
+
+.indicator-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Message metrics */
+.message-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.metric-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.metric-label {
+  font-size: 0.75rem;
+  color: var(--text-light);
+}
+
+.metric-change {
+  font-size: 0.75rem;
+  color: var(--success);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* Charts */
+.chart-container {
+  width: 100%;
+  height: 150px;
+  margin-top: 1rem;
+  position: relative;
+}
+
+.chart-placeholder {
+  width: 100%;
+  height: 100%;
+  background-color: var(--light-bg);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-light);
+  font-size: 0.875rem;
+}
+
 .migration-status-container {
   display: flex;
   gap: 20px;
@@ -136,10 +373,4 @@ header {
 .block-number-display span {
   font-weight: 500;
   color: #1a1a1a;
-}
-
-.block-number-display .number {
-  font-family: 'Roboto Mono', monospace;
-  font-weight: 600;
-  color: #2196F3;
 } 
