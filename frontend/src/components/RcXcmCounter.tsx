@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useCallback } from 'react';
+import { useEventSource } from '../hooks/useEventSource';
+import type { EventType } from '../hooks/useEventSource';
 import './RcXcmCounter.css';
 
 interface XcmCounter {
@@ -12,58 +14,12 @@ interface XcmCounter {
 
 export const RcXcmCounter: React.FC = () => {
   const [counter, setCounter] = useState<XcmCounter | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
-
-  useEffect(() => {
-    if (isConnected) return;
-
-    const sse = new EventSource('http://localhost:8080/api/rc-xcm-counter');
-    console.log('Setting up SSE connection for RC XCM counter...');
-    setIsConnected(true);
-
-    // Handle the initial connection event
-    sse.addEventListener('connected', (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        console.log('Received connected event for RC XCM counter:', data);
-        if (data.latestCounter) {
-          setCounter(data.latestCounter);
-        }
-      } catch (err) {
-        console.error('Error parsing connected event for RC XCM counter:', err);
-      }
-    });
-
-    // Handle counter updates
-    sse.addEventListener('rcXcmMessageCounter', (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        console.log('Received counter update for RC:', data);
-        setCounter(data);
-      } catch (err) {
-        console.error('Error parsing counter update for RC:', err);
-      }
-    });
-
-    // Handle general messages as fallback
-    sse.onmessage = (event) => {
-      console.log('Received general message for RC XCM counter:', event.data);
-    };
-
-    sse.onerror = (err) => {
-      console.error('SSE Error for RC XCM counter:', err);
-      setError('Error connecting to XCM counter');
-      sse.close();
-      setIsConnected(false);
-    };
-
-    return () => {
-      console.log('Cleaning up SSE connection for RC XCM counter...');
-      sse.close();
-      setIsConnected(false);
-    };
+  
+  const handleEvent = useCallback((_eventType: EventType, data: XcmCounter) => {
+    setCounter(data);
   }, []);
+
+  const { error } = useEventSource(['rcXcmMessageCounter'], handleEvent);
 
   if (error) {
     return <div className="error-message">{error}</div>;

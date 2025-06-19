@@ -1,44 +1,26 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import RcMigrationStatus from './components/RcMigrationStatus';
 import { AhMigrationStatus } from './components/AhMigrationStatus';
 import { AhXcmCounter } from './components/AhXcmCounter';
 import { RcXcmCounter } from './components/RcXcmCounter';
 import { RcBalances } from './components/RcBalances';
+import { useEventSource } from './hooks/useEventSource';
+import type { EventType } from './hooks/useEventSource';
 import './App.css';
 
 function App() {
   const [rcBlockNumber, setRcBlockNumber] = useState<number | null>(null);
   const [ahBlockNumber, setAhBlockNumber] = useState<number | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
 
-  useEffect(() => {
-    const eventSource = new EventSource('http://localhost:8080/api/combined-heads');
-    
-    eventSource.addEventListener('connected', (event) => {
-      const data = JSON.parse(event.data);
-      if (data.connected) setIsConnected(true);
-    });
-
-    eventSource.addEventListener('rcHead', (event) => {
-      const data = JSON.parse(event.data);
-      if (data.blockNumber) setRcBlockNumber(data.blockNumber);
-    });
-
-    eventSource.addEventListener('ahHead', (event) => {
-      const data = JSON.parse(event.data);
-      if (data.blockNumber) setAhBlockNumber(data.blockNumber);
-    });
-
-    eventSource.onerror = (err) => {
-      console.error('SSE Error:', err);
-      eventSource.close();
-      setIsConnected(false);
-    };
-
-    return () => {
-      eventSource.close();
-    };
+  const handleEvent = useCallback((eventType: EventType, data: any) => {
+    if (eventType === 'rcHead' && data.blockNumber) {
+      setRcBlockNumber(data.blockNumber);
+    } else if (eventType === 'ahHead' && data.blockNumber) {
+      setAhBlockNumber(data.blockNumber);
+    }
   }, []);
+
+  const { isConnected } = useEventSource(['rcHead', 'ahHead'], handleEvent);
 
   return (
     <div className="app">

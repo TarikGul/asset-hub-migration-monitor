@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useCallback } from 'react';
+import { useEventSource } from '../hooks/useEventSource';
+import type { EventType } from '../hooks/useEventSource';
 import './AhMigrationStatus.css';
 
 interface MigrationStage {
@@ -12,58 +14,12 @@ interface MigrationStage {
 
 export const AhMigrationStatus: React.FC = () => {
   const [currentStage, setCurrentStage] = useState<MigrationStage | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
-
-  useEffect(() => {
-    if (isConnected) return;
-
-    const sse = new EventSource('http://localhost:8080/api/ah-migration-stages');
-    console.log('Setting up SSE connection for AH...');
-    setIsConnected(true);
-
-    // Handle the initial connection event
-    sse.addEventListener('connected', (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        console.log('Received connected event for AH:', data);
-        if (data.latestStage) {
-          setCurrentStage(data.latestStage);
-        }
-      } catch (err) {
-        console.error('Error parsing connected event for AH:', err);
-      }
-    });
-
-    // Handle stage updates
-    sse.addEventListener('ahStageUpdate', (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        console.log('Received stage update for AH:', data);
-        setCurrentStage(data);
-      } catch (err) {
-        console.error('Error parsing stage update for AH:', err);
-      }
-    });
-
-    // Handle general messages as fallback
-    sse.onmessage = (event) => {
-      console.log('Received general message for AH:', event.data);
-    };
-
-    sse.onerror = (err) => {
-      console.error('SSE Error for AH:', err);
-      setError('Error connecting to migration stages');
-      sse.close();
-      setIsConnected(false);
-    };
-
-    return () => {
-      console.log('Cleaning up SSE connection for AH...');
-      sse.close();
-      setIsConnected(false);
-    };
+  
+  const handleEvent = useCallback((_eventType: EventType, data: MigrationStage) => {
+    setCurrentStage(data);
   }, []);
+
+  const { error } = useEventSource(['ahStageUpdate'], handleEvent);
 
   if (error) {
     return <div className="error-message">{error}</div>;

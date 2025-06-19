@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useCallback } from 'react';
+import { useEventSource } from '../hooks/useEventSource';
+import type { EventType } from '../hooks/useEventSource';
 import './RcBalances.css';
 
 interface BalanceData {
@@ -8,34 +10,12 @@ interface BalanceData {
 
 export const RcBalances: React.FC = () => {
   const [balances, setBalances] = useState<BalanceData | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const eventSource = new EventSource('http://localhost:8080/api/rc-balances');
-
-    eventSource.addEventListener('connected', (event) => {
-      const data = JSON.parse(event.data);
-      if (data.connected) {
-        setIsConnected(true);
-      }
-    });
-
-    eventSource.addEventListener('balances', (event) => {
-      const data = JSON.parse(event.data);
-      setBalances(data);
-    });
-
-    eventSource.addEventListener('error', (event) => {
-      console.error('SSE Error:', event);
-      setError('Failed to connect to balance updates');
-      eventSource.close();
-    });
-
-    return () => {
-      eventSource.close();
-    };
+  
+  const handleEvent = useCallback((_eventType: EventType, data: BalanceData) => {
+    setBalances(data);
   }, []);
+
+  const { isConnected, error } = useEventSource(['rcBalances'], handleEvent);
 
   if (error) {
     return <div className="error-message">{error}</div>;

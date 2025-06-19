@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useCallback } from 'react';
+import { useEventSource } from '../hooks/useEventSource';
+import type { EventType } from '../hooks/useEventSource';
 import './RcMigrationStatus.css';
 
 interface MigrationStage {
@@ -11,58 +13,12 @@ interface MigrationStage {
 
 const MigrationStatus: React.FC = () => {
   const [currentStage, setCurrentStage] = useState<MigrationStage | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
-
-  useEffect(() => {
-    if (isConnected) return;
-
-    const sse = new EventSource('http://localhost:8080/api/rc-migration-stages');
-    console.log('Setting up SSE connection...');
-    setIsConnected(true);
-
-    // Handle the initial connection event
-    sse.addEventListener('connected', (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        console.log('Received connected event:', data);
-        if (data.latestStage) {
-          setCurrentStage(data.latestStage);
-        }
-      } catch (err) {
-        console.error('Error parsing connected event:', err);
-      }
-    });
-
-    // Handle stage updates
-    sse.addEventListener('rcStageUpdate', (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        console.log('Received stage update:', data);
-        setCurrentStage(data);
-      } catch (err) {
-        console.error('Error parsing stage update:', err);
-      }
-    });
-
-    // Handle general messages as fallback
-    sse.onmessage = (event) => {
-      console.log('Received general message:', event.data);
-    };
-
-    sse.onerror = (err) => {
-      console.error('SSE Error:', err);
-      setError('Error connecting to migration stages');
-      sse.close();
-      setIsConnected(false);
-    };
-
-    return () => {
-      console.log('Cleaning up SSE connection...');
-      sse.close();
-      setIsConnected(false);
-    };
+  
+  const handleEvent = useCallback((_eventType: EventType, data: MigrationStage) => {
+    setCurrentStage(data);
   }, []);
+
+  const { error } = useEventSource(['rcStageUpdate'], handleEvent);
 
   if (error) {
     return <div className="error-message">{error}</div>;
