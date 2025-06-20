@@ -23,7 +23,7 @@
   }
 
   /** @name PalletRcMigratorMigrationStage (441) */
-  export interface PalletRcMigratorMigrationStage extends Enum {
+export  interface PalletRcMigratorMigrationStage extends Enum {
     readonly isPending: boolean;
     readonly isScheduled: boolean;
     readonly asScheduled: {
@@ -43,11 +43,6 @@
       readonly lastKey: Option<ITuple<[AccountId32, U8aFixed]>>;
     } & Struct;
     readonly isMultisigMigrationDone: boolean;
-    readonly isClaimsMigrationInit: boolean;
-    readonly isClaimsMigrationOngoing: boolean;
-    readonly asClaimsMigrationOngoing: {
-      readonly currentKey: Option<PalletRcMigratorClaimsClaimsStage>;
-    } & Struct;
     readonly isClaimsMigrationDone: boolean;
     readonly isProxyMigrationInit: boolean;
     readonly isProxyMigrationProxies: boolean;
@@ -129,11 +124,6 @@
       readonly lastKey: Option<PalletRcMigratorConvictionVotingConvictionVotingStage>;
     } & Struct;
     readonly isConvictionVotingMigrationDone: boolean;
-    readonly isBountiesMigrationInit: boolean;
-    readonly isBountiesMigrationOngoing: boolean;
-    readonly asBountiesMigrationOngoing: {
-      readonly lastKey: Option<PalletRcMigratorBountiesBountiesStage>;
-    } & Struct;
     readonly isBountiesMigrationDone: boolean;
     readonly isAssetRateMigrationInit: boolean;
     readonly isAssetRateMigrationOngoing: boolean;
@@ -141,22 +131,57 @@
       readonly lastKey: Option<PolkadotRuntimeCommonImplsVersionedLocatableAsset>;
     } & Struct;
     readonly isAssetRateMigrationDone: boolean;
-    readonly isCrowdloanMigrationInit: boolean;
-    readonly isCrowdloanMigrationOngoing: boolean;
-    readonly asCrowdloanMigrationOngoing: {
-      readonly lastKey: Option<PalletRcMigratorCrowdloanCrowdloanStage>;
-    } & Struct;
     readonly isCrowdloanMigrationDone: boolean;
-    readonly isTreasuryMigrationInit: boolean;
-    readonly isTreasuryMigrationOngoing: boolean;
-    readonly asTreasuryMigrationOngoing: {
-      readonly lastKey: Option<PalletRcMigratorTreasuryTreasuryStage>;
-    } & Struct;
     readonly isTreasuryMigrationDone: boolean;
+    readonly isStakingMigrationInit: boolean;
+    readonly isStakingMigrationOngoing: boolean;
+    readonly asStakingMigrationOngoing: {
+      readonly nextKey: Option<PalletRcMigratorStakingStakingStage>;
+    } & Struct;
     readonly isStakingMigrationDone: boolean;
     readonly isSignalMigrationFinish: boolean;
     readonly isMigrationDone: boolean;
-    readonly type: 'Pending' | 'Scheduled' | 'WaitingForAh' | 'Starting' | 'AccountsMigrationInit' | 'AccountsMigrationOngoing' | 'AccountsMigrationDone' | 'MultisigMigrationInit' | 'MultisigMigrationOngoing' | 'MultisigMigrationDone' | 'ClaimsMigrationInit' | 'ClaimsMigrationOngoing' | 'ClaimsMigrationDone' | 'ProxyMigrationInit' | 'ProxyMigrationProxies' | 'ProxyMigrationAnnouncements' | 'ProxyMigrationDone' | 'PreimageMigrationInit' | 'PreimageMigrationChunksOngoing' | 'PreimageMigrationChunksDone' | 'PreimageMigrationRequestStatusOngoing' | 'PreimageMigrationRequestStatusDone' | 'PreimageMigrationLegacyRequestStatusInit' | 'PreimageMigrationLegacyRequestStatusOngoing' | 'PreimageMigrationLegacyRequestStatusDone' | 'PreimageMigrationDone' | 'NomPoolsMigrationInit' | 'NomPoolsMigrationOngoing' | 'NomPoolsMigrationDone' | 'VestingMigrationInit' | 'VestingMigrationOngoing' | 'VestingMigrationDone' | 'FastUnstakeMigrationInit' | 'FastUnstakeMigrationOngoing' | 'FastUnstakeMigrationDone' | 'IndicesMigrationInit' | 'IndicesMigrationOngoing' | 'IndicesMigrationDone' | 'ReferendaMigrationInit' | 'ReferendaMigrationOngoing' | 'ReferendaMigrationDone' | 'BagsListMigrationInit' | 'BagsListMigrationOngoing' | 'BagsListMigrationDone' | 'SchedulerMigrationInit' | 'SchedulerMigrationOngoing' | 'SchedulerAgendaMigrationOngoing' | 'SchedulerMigrationDone' | 'ConvictionVotingMigrationInit' | 'ConvictionVotingMigrationOngoing' | 'ConvictionVotingMigrationDone' | 'BountiesMigrationInit' | 'BountiesMigrationOngoing' | 'BountiesMigrationDone' | 'AssetRateMigrationInit' | 'AssetRateMigrationOngoing' | 'AssetRateMigrationDone' | 'CrowdloanMigrationInit' | 'CrowdloanMigrationOngoing' | 'CrowdloanMigrationDone' | 'TreasuryMigrationInit' | 'TreasuryMigrationOngoing' | 'TreasuryMigrationDone' | 'StakingMigrationDone' | 'SignalMigrationFinish' | 'MigrationDone';
+    readonly type: 'Pending' | 'Scheduled' | 'WaitingForAh' | 'Starting' | 'AccountsMigrationInit' | 'AccountsMigrationOngoing' | 'AccountsMigrationDone' | 'MultisigMigrationInit' | 'MultisigMigrationOngoing' | 'MultisigMigrationDone' | 'ClaimsMigrationDone' | 'ProxyMigrationInit' | 'ProxyMigrationProxies' | 'ProxyMigrationAnnouncements' | 'ProxyMigrationDone' | 'PreimageMigrationInit' | 'PreimageMigrationChunksOngoing' | 'PreimageMigrationChunksDone' | 'PreimageMigrationRequestStatusOngoing' | 'PreimageMigrationRequestStatusDone' | 'PreimageMigrationLegacyRequestStatusInit' | 'PreimageMigrationLegacyRequestStatusOngoing' | 'PreimageMigrationLegacyRequestStatusDone' | 'PreimageMigrationDone' | 'NomPoolsMigrationInit' | 'NomPoolsMigrationOngoing' | 'NomPoolsMigrationDone' | 'VestingMigrationInit' | 'VestingMigrationOngoing' | 'VestingMigrationDone' | 'FastUnstakeMigrationInit' | 'FastUnstakeMigrationOngoing' | 'FastUnstakeMigrationDone' | 'IndicesMigrationInit' | 'IndicesMigrationOngoing' | 'IndicesMigrationDone' | 'ReferendaMigrationInit' | 'ReferendaMigrationOngoing' | 'ReferendaMigrationDone' | 'BagsListMigrationInit' | 'BagsListMigrationOngoing' | 'BagsListMigrationDone' | 'SchedulerMigrationInit' | 'SchedulerMigrationOngoing' | 'SchedulerAgendaMigrationOngoing' | 'SchedulerMigrationDone' | 'ConvictionVotingMigrationInit' | 'ConvictionVotingMigrationOngoing' | 'ConvictionVotingMigrationDone' | 'BountiesMigrationDone' | 'AssetRateMigrationInit' | 'AssetRateMigrationOngoing' | 'AssetRateMigrationDone' | 'CrowdloanMigrationDone' | 'TreasuryMigrationDone' | 'StakingMigrationInit' | 'StakingMigrationOngoing' | 'StakingMigrationDone' | 'SignalMigrationFinish' | 'MigrationDone';
+  }
+
+  interface PalletRcMigratorStakingStakingStage extends Enum {
+    readonly isValues: boolean;
+    readonly isInvulnerables: boolean;
+    readonly isBonded: boolean;
+    readonly asBonded: Option<AccountId32>;
+    readonly isLedger: boolean;
+    readonly asLedger: Option<AccountId32>;
+    readonly isPayee: boolean;
+    readonly asPayee: Option<AccountId32>;
+    readonly isValidators: boolean;
+    readonly asValidators: Option<AccountId32>;
+    readonly isNominators: boolean;
+    readonly asNominators: Option<AccountId32>;
+    readonly isVirtualStakers: boolean;
+    readonly asVirtualStakers: Option<AccountId32>;
+    readonly isErasStakersOverview: boolean;
+    readonly asErasStakersOverview: Option<ITuple<[u32, AccountId32]>>;
+    readonly isErasStakersPaged: boolean;
+    readonly asErasStakersPaged: Option<ITuple<[u32, AccountId32, u32]>>;
+    readonly isClaimedRewards: boolean;
+    readonly asClaimedRewards: Option<ITuple<[u32, AccountId32]>>;
+    readonly isErasValidatorPrefs: boolean;
+    readonly asErasValidatorPrefs: Option<ITuple<[u32, AccountId32]>>;
+    readonly isErasValidatorReward: boolean;
+    readonly asErasValidatorReward: Option<u32>;
+    readonly isErasRewardPoints: boolean;
+    readonly asErasRewardPoints: Option<u32>;
+    readonly isErasTotalStake: boolean;
+    readonly asErasTotalStake: Option<u32>;
+    readonly isUnappliedSlashes: boolean;
+    readonly asUnappliedSlashes: Option<u32>;
+    readonly isBondedEras: boolean;
+    readonly isValidatorSlashInEra: boolean;
+    readonly asValidatorSlashInEra: Option<ITuple<[u32, AccountId32]>>;
+    readonly isNominatorSlashInEra: boolean;
+    readonly asNominatorSlashInEra: Option<ITuple<[u32, AccountId32]>>;
+    readonly isFinished: boolean;
+    readonly type: 'Values' | 'Invulnerables' | 'Bonded' | 'Ledger' | 'Payee' | 'Validators' | 'Nominators' | 'VirtualStakers' | 'ErasStakersOverview' | 'ErasStakersPaged' | 'ClaimedRewards' | 'ErasValidatorPrefs' | 'ErasValidatorReward' | 'ErasRewardPoints' | 'ErasTotalStake' | 'UnappliedSlashes' | 'BondedEras' | 'ValidatorSlashInEra' | 'NominatorSlashInEra' | 'Finished';
   }
 
   /** @name PalletRcMigratorClaimsClaimsStage (445) */
