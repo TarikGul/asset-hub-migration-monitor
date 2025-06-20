@@ -98,6 +98,11 @@
   background-color: var(--primary);
 }
 
+.point-marker.ongoing {
+  background-color: var(--warning);
+  border-color: var(--warning);
+}
+
 .point-label {
   font-size: 0.75rem;
   color: var(--text-light);

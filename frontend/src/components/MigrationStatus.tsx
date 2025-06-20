@@ -1,7 +1,87 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
+import { useEventSource } from '../hooks/useEventSource';
+import type { EventType } from '../hooks/useEventSource';
 import './MigrationStatus.css';
 
+// Migration pallets in order
+const MIGRATION_PALLETS = [
+  'Accounts',
+  'Multisig',
+  'Claims',
+  'Proxy',
+  'Preimage',
+  'NomPools',
+  'Vesting',
+  'FastUnstake',
+  'Indices',
+  'Referenda',
+  'BagsList',
+  'Scheduler',
+  'ConvictionVoting',
+  'Bounties',
+  'AssetRate',
+  'Crowdloan',
+  'Treasury',
+  'Staking'
+];
+
+interface MigrationStage {
+  stage: string;
+  details: any;
+  blockNumber: number;
+  blockHash: string;
+  timestamp: string;
+}
+
 const MigrationStatus: React.FC = () => {
+  const [currentStage, setCurrentStage] = useState<MigrationStage | null>(null);
+  const [completedPallets, setCompletedPallets] = useState<string[]>([]);
+  
+  // Subscribe to RC migration stage updates
+  const { error } = useEventSource(['rcStageUpdate'], useCallback((_eventType: EventType, data: MigrationStage) => {
+    setCurrentStage(data);
+    
+    // Handle MigrationDone stage - mark all pallets as completed
+    if (data.stage === 'MigrationDone') {
+      setCompletedPallets([...MIGRATION_PALLETS]);
+      return;
+    }
+    
+    // Update completed pallets based on the stage
+    // This is a simplified logic - you might want to enhance this based on your actual stage data
+    const stageName = data.stage;
+    const palletIndex = MIGRATION_PALLETS.findIndex(pallet => 
+      stageName.toLowerCase().includes(pallet.toLowerCase())
+    );
+    
+    if (palletIndex > 0) {
+      // Mark all pallets up to the current one as completed
+      const newCompleted = MIGRATION_PALLETS.slice(0, palletIndex);
+      setCompletedPallets(newCompleted);
+    }
+  }, []));
+
+  // Calculate which pallets to show in the carousel
+  const getVisiblePallets = () => {
+    const currentIndex = MIGRATION_PALLETS.findIndex(pallet => 
+      currentStage?.stage.toLowerCase().includes(pallet.toLowerCase())
+    );
+    
+    // If no current stage, show first few pallets
+    if (currentIndex === -1) {
+      return MIGRATION_PALLETS.slice(0, 6);
+    }
+    
+    // Show current pallet and a few before/after
+    const startIndex = Math.max(0, currentIndex - 2);
+    const endIndex = Math.min(MIGRATION_PALLETS.length, currentIndex + 4);
+    
+    return MIGRATION_PALLETS.slice(startIndex, endIndex);
+  };
+
+  const visiblePallets = getVisiblePallets();
+  const progressPercentage = completedPallets.length / MIGRATION_PALLETS.length * 100;
+
   return (
     <section className="card migration-status">
       <div className="card-header">
@@ -12,45 +92,41 @@ const MigrationStatus: React.FC = () => {
       </div>
       
       <div className="stage-display">
-        <div className="stage-name">Loading...</div>
-        <div className="stage-description">Waiting for migration status updates</div>
+        <div className="stage-name">
+          {currentStage ? currentStage.stage : 'Loading...'}
+        </div>
+        <div className="stage-description">
+          {currentStage 
+            ? currentStage.stage === 'MigrationDone'
+              ? 'Migration completed successfully! All pallets have been migrated.'
+              : `Currently migrating ${currentStage.stage} at block #${currentStage.blockNumber}`
+            : 'Waiting for migration status updates'
+          }
+        </div>
       </div>
       
       <div className="progress-container">
         <div className="progress-header">
           <span className="progress-label">Overall Progress</span>
-          <span className="progress-value">0%</span>
+          <span className="progress-value">{Math.round(progressPercentage)}%</span>
         </div>
         <div className="progress-bar">
-          <div className="progress-fill" style={{ width: '0%' }}></div>
+          <div className="progress-fill" style={{ width: `${progressPercentage}%` }}></div>
         </div>
       </div>
       
       <div className="timeline">
-        <div className="timeline-point">
-          <div className="point-marker"></div>
-          <div className="point-label">Account Migration</div>
-        </div>
-        <div className="timeline-point">
-          <div className="point-marker"></div>
-          <div className="point-label">Multisig Migration</div>
-        </div>
-        <div className="timeline-point">
-          <div className="point-marker"></div>
-          <div className="point-label">Claims Migration</div>
-        </div>
-        <div className="timeline-point">
-          <div className="point-marker"></div>
-          <div className="point-label">Conviction Voting</div>
-        </div>
-        <div className="timeline-point">
-          <div className="point-marker"></div>
-          <div className="point-label">Treasury</div>
-        </div>
-        <div className="timeline-point">
-          <div className="point-marker"></div>
-          <div className="point-label">Complete</div>
-        </div>
+        {visiblePallets.map((pallet, index) => {
+          const isCompleted = completedPallets.includes(pallet);
+          const isCurrent = currentStage?.stage.toLowerCase().includes(pallet.toLowerCase());
+          
+          return (
+            <div key={pallet} className="timeline-point">
+              <div className={`point-marker ${isCompleted ? 'completed' : isCurrent ? 'ongoing' : ''}`}></div>
+              <div className="point-label">{pallet}</div>
+            </div>
+          );
+        })}
       </div>
       
       <div className="health-indicators">
