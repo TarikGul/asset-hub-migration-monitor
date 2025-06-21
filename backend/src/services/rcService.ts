@@ -1,8 +1,9 @@
 import type { PalletRcMigratorMigrationStage, PalletRcMigratorAccountsMigratedBalances } from '../types/pjs';
-import type { u32 } from '@polkadot/types';
+import type { u32, Vec } from '@polkadot/types';
 import type { ITuple } from '@polkadot/types/types';
+import type { PolkadotCorePrimitivesInboundDownwardMessage } from '@polkadot/types/lookup';
 import { db } from '../db';
-import { migrationStages } from '../db/schema';
+import { migrationStages, dmpQueueEvents } from '../db/schema';
 import { AbstractApi } from './abstractApi';
 import { processBlock } from './xcmProcessing';
 import { VoidFn } from '@polkadot/api/types';
@@ -222,4 +223,60 @@ export async function runRcBalancesService() {
   }) as unknown as VoidFn;
 
   return unsubscribeAccountsMigration;
+}
+
+export async function runRcDmpDataMessageCountsService() {
+  const { logger } = Log;
+  const api = await AbstractApi.getInstance().getRelayChainApi();
+
+  let previousQueueSize = 0;
+
+  const unsubscribeDmpDataMessageCounts = await api.query.dmp.downwardMessageQueues(1000, async (messages: Vec<PolkadotCorePrimitivesInboundDownwardMessage>) => {
+    try {
+      const currentQueueSize = messages.length;
+      const header = await api.rpc.chain.getHeader();
+      
+      // Calculate exact total size in bytes by summing encoded lengths
+      let totalSizeBytes = 0;
+      for (const message of messages) {
+        totalSizeBytes += message.msg.encodedLength;
+      }
+      
+      // Determine event type based on size change
+      let eventType = 'no_change';
+      if (currentQueueSize > previousQueueSize) {
+        eventType = 'fill';
+      } else if (currentQueueSize < previousQueueSize) {
+        eventType = currentQueueSize === 0 ? 'drain' : 'partial_drain';
+      }
+
+      // Only record if there's an actual change
+      if (eventType !== 'no_change') {
+        await db.insert(dmpQueueEvents).values({
+          queueSize: currentQueueSize,
+          totalSizeBytes,
+          eventType,
+          blockNumber: header.number.toNumber(),
+          timestamp: new Date(),
+        });
+
+        // Emit event for frontend
+        eventService.emit('dmpQueueEvent', {
+          queueSize: currentQueueSize,
+          totalSizeBytes,
+          eventType,
+          blockNumber: header.number.toNumber(),
+          timestamp: new Date().toISOString(),
+        });
+
+        logger.info(`DMP queue event recorded: ${eventType}, size: ${currentQueueSize}, bytes: ${totalSizeBytes}, block: ${header.number.toNumber()}`);
+      }
+
+      previousQueueSize = currentQueueSize;
+    } catch (error) {
+      logger.error('Error processing DMP queue event:', error);
+    }
+  }) as unknown as VoidFn;
+
+  return unsubscribeDmpDataMessageCounts;
 }

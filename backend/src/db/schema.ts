@@ -57,3 +57,54 @@ export const palletMigrationCounters = sqliteTable('pallet_migration_counters', 
   failedItems: integer('failed_items').notNull().default(0),
   lastUpdated: integer('last_updated', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
 });
+
+// DMP Queue State Changes
+export const dmpQueueEvents = sqliteTable('dmp_queue_events', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  queueSize: integer('queue_size').notNull(), // Number of messages in queue
+  totalSizeBytes: integer('total_size_bytes').notNull().default(0), // Total size in bytes
+  eventType: text('event_type').notNull(), // 'fill', 'drain', 'partial_drain'
+  blockNumber: integer('block_number').notNull(),
+  timestamp: integer('timestamp', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`),
+});
+
+// Message Processing Events (from Asset Hub)
+export const messageProcessingEventsAH = sqliteTable('message_processing_events', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  blockNumber: integer('block_number').notNull(),
+  timestamp: integer('timestamp', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`),
+});
+
+// Queue-Processing Correlation
+export const queueProcessingCorrelation = sqliteTable('queue_processing_correlation', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  queueEventId: integer('queue_event_id').notNull().references(() => dmpQueueEvents.id),
+  processingEventId: integer('processing_event_id').notNull().references(() => messageProcessingEventsAH.id),
+  latencyMs: integer('latency_ms').notNull(), // Time between queue drain and processing
+  throughput: integer('throughput').notNull(), // Messages per second
+  throughputBytes: integer('throughput_bytes').notNull(), // Bytes per second
+  timestamp: integer('timestamp', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`),
+});
+
+// Cached DMP Metrics for quick frontend queries
+export const dmpMetricsCache = sqliteTable('dmp_metrics_cache', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  currentQueueSize: integer('current_queue_size').notNull().default(0),
+  currentQueueSizeBytes: integer('current_queue_size_bytes').notNull().default(0),
+  averageLatencyMs: integer('average_latency_ms').notNull().default(0),
+  averageThroughput: integer('average_throughput').notNull().default(0),
+  averageThroughputBytes: integer('average_throughput_bytes').notNull().default(0),
+  lastUpdated: integer('last_updated', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+});
+
+export type DmpQueueEvent = typeof dmpQueueEvents.$inferSelect;
+export type NewDmpQueueEvent = typeof dmpQueueEvents.$inferInsert;
+
+export type MessageProcessingEventAH = typeof messageProcessingEventsAH.$inferSelect;
+export type NewMessageProcessingEvent = typeof messageProcessingEventsAH.$inferInsert;
+
+export type QueueProcessingCorrelation = typeof queueProcessingCorrelation.$inferSelect;
+export type NewQueueProcessingCorrelation = typeof queueProcessingCorrelation.$inferInsert;
+
+export type DmpMetricsCache = typeof dmpMetricsCache.$inferSelect;
+export type NewDmpMetricsCache = typeof dmpMetricsCache.$inferInsert;

@@ -5,7 +5,7 @@ import type { VoidFn } from '@polkadot/api/types';
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { initializeDb } from './db/initializeDb';
-import { runRcHeadsService, runRcMigrationStageService, runRcXcmMessageCounterService, runRcBalancesService } from './services/rcService';
+import { runRcHeadsService, runRcMigrationStageService, runRcXcmMessageCounterService, runRcBalancesService, runRcDmpDataMessageCountsService } from './services/rcService';
 import { eventService } from './services/eventService';
 import { runAhMigrationStageService, runAhHeadsService, runAhXcmMessageCounterService } from './services/ahService';
 import { Log } from './logging/Log';
@@ -50,6 +50,7 @@ let cleanupAhXcmMessageCounter: VoidFn | null = null;
 let cleanupRcFinalizedHeads: VoidFn | null = null;
 let cleanupAhFinalizedHeads: VoidFn | null = null;
 let cleanupRcBalances: VoidFn | null = null;
+let cleanupRcDmpDataMessageCounts: VoidFn | null = null;
 
 // Start the RC finalized heads service
 runRcFinalizedHeadsService()
@@ -94,6 +95,12 @@ runAhFinalizedHeadsService()
 runRcBalancesService()
   .then((result) => {
     cleanupRcBalances = result;
+  })
+  .catch(err => logger.error(err));
+
+runRcDmpDataMessageCountsService()
+  .then((result) => {
+    cleanupRcDmpDataMessageCounts = result;
   })
   .catch(err => logger.error(err));
 
@@ -166,6 +173,11 @@ signals.forEach((signal) => {
     if (cleanupRcBalances) {
       logger.info('Cleaning up rc balances subscription...');
       cleanupRcBalances();
+    }
+
+    if (cleanupRcDmpDataMessageCounts) {
+      logger.info('Cleaning up rc dmp data message counts subscription...');
+      cleanupRcDmpDataMessageCounts();
     }
 
     server.close(() => {

@@ -1,5 +1,5 @@
 import { db } from './index';
-import { xcmMessageCounters } from './schema';
+import { xcmMessageCounters, dmpMetricsCache } from './schema';
 import { Log } from '../logging/Log';
 
 export async function initializeDb() {
@@ -32,6 +32,20 @@ export async function initializeDb() {
         messagesSent: 0,
         messagesProcessed: 0,
         messagesFailed: 0,
+        lastUpdated: new Date(),
+      });
+    }
+
+    // Initialize DMP metrics cache if it doesn't exist
+    const existingDmpCache = await db.query.dmpMetricsCache.findFirst();
+    if (!existingDmpCache) {
+      logger.info('Initializing DMP metrics cache');
+      await db.insert(dmpMetricsCache).values({
+        currentQueueSize: 0,
+        currentQueueSizeBytes: 0,
+        averageLatencyMs: 0,
+        averageThroughput: 0,
+        averageThroughputBytes: 0,
         lastUpdated: new Date(),
       });
     }
