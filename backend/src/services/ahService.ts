@@ -13,8 +13,6 @@ import { VoidFn } from '@polkadot/api/types';
 import { getConfig } from '../config';
 
 async function updateXcmMessageCountersViaEvents(upwardMessageSent: number, downwardMessagesProcessed: number) {
-  const { logger } = Log;
-  
   try {
     // Update the AH->RC counter with processed messages
     await db.update(xcmMessageCounters)
@@ -40,29 +38,53 @@ async function updateXcmMessageCountersViaEvents(upwardMessageSent: number, down
         lastUpdated: counter.lastUpdated,
       };
       
-      logger.info('Emitting ahXcmMessageCounter event with data:', eventData);
+      Log.service({
+        service: 'XCM Message Counter',
+        action: 'Emitting ahXcmMessageCounter event',
+        details: eventData
+      });
       eventService.emit('ahXcmMessageCounter', eventData);
     } else {
-      logger.warn('No counter found after update');
+      Log.service({
+        service: 'XCM Message Counter',
+        action: 'No counter found after update',
+        details: { sourceChain: 'asset-hub' }
+      });
     }
 
-    logger.info(`Updated XCM message counter for asset-hub -> relay-chain: ${upwardMessageSent} upward, ${downwardMessagesProcessed} downward messages processed`);
+    Log.service({
+      service: 'XCM Message Counter',
+      action: 'Updated counters via events',
+      details: { upwardMessageSent, downwardMessagesProcessed }
+    });
   } catch (error) {
-    logger.error('Error updating XCM message counter:', error);
+    Log.service({
+      service: 'XCM Message Counter',
+      action: 'Error updating counters via events',
+      error: error as Error
+    });
   }
 }
 
 export const runAhHeadsService = async (): Promise<VoidFn> => {
   const provider = new WsProvider(getConfig().assetHubUrl);
   const api = await ApiPromise.create({ provider });
-  const { logger } = Log;
-  logger.info('Connected to Asset Hub');
+  Log.connection({
+    service: 'Asset Hub Heads',
+    status: 'connected'
+  });
 
   const unsubscribe = await api.rpc.chain.subscribeFinalizedHeads((header) => {
     const blockNumber = header.number.toNumber();
     const blockHash = header.hash.toString();
 
-    logger.info(`New AH finalized head: #${blockNumber}`);
+    Log.chainEvent({
+      chain: 'asset-hub',
+      eventType: 'finalized head',
+      blockNumber,
+      blockHash,
+      details: { timestamp: new Date().toISOString() }
+    });
 
     // Emit the head event through eventService
     eventService.emit('ahHead', {
@@ -76,7 +98,6 @@ export const runAhHeadsService = async (): Promise<VoidFn> => {
 };
 
 export async function runAhMigrationStageService() {
-  const { logger } = Log;
   const api = await AbstractApi.getInstance().getAssetHubApi();
   
   const unsubscribeMigrationStage = await api.query.ahMigrator.ahMigrationStage(async (migrationStage: any) => {
@@ -100,13 +121,19 @@ export async function runAhMigrationStageService() {
         timestamp: new Date().toISOString(),
       });
 
-      logger.info('Asset Hub Migration stage updated:', {
+      Log.chainEvent({
         chain: 'asset-hub',
-        stage: migrationStage.type,
+        eventType: 'migration stage update',
         blockNumber: header.number.toNumber(),
+        blockHash: header.hash.toHex(),
+        details: { stage: migrationStage.type }
       });
     } catch (error) {
-      logger.error('Error processing migration stage:', error);
+      Log.chainEvent({
+        chain: 'asset-hub',
+        eventType: 'migration stage processing error',
+        error: error as Error
+      });
     }
   }) as unknown as VoidFn;
 
@@ -142,8 +169,6 @@ export async function findXcmMessages(api: ApiPromise, block: Block) {
 }
 
 async function updateXcmMessageCountersViaStorage(erroredOnAh: number) {
-  const { logger } = Log;
-  
   try {
     await db.update(xcmMessageCounters)
       .set({
@@ -167,18 +192,29 @@ async function updateXcmMessageCountersViaStorage(erroredOnAh: number) {
         lastUpdated: counterAh.lastUpdated,
       };
 
-      logger.info('Emitting ahXcmMessageCounter event with data:', eventData);
+      Log.service({
+        service: 'XCM Message Counter',
+        action: 'Emitting ahXcmMessageCounter event via storage',
+        details: eventData
+      });
       eventService.emit('ahXcmMessageCounter', eventData);
     } else {
-      logger.warn('No counter found after update');
+      Log.service({
+        service: 'XCM Message Counter',
+        action: 'No counter found after storage update',
+        details: { sourceChain: 'asset-hub' }
+      });
     }
   } catch (error) {
-    logger.error('Error updating XCM message counter:', error);
+    Log.service({
+      service: 'XCM Message Counter',
+      action: 'Error updating counters via storage',
+      error: error as Error
+    });
   }
 }
 
 export async function runAhXcmMessageCounterService() {
-  const { logger } = Log;
   const api = await AbstractApi.getInstance().getAssetHubApi();
 
   const unsubscribeXcmMessages = await api.query.rcMigrator.dmpDataMessageCounts(async (messages: ITuple<[u32, u32]>) => {
@@ -186,7 +222,11 @@ export async function runAhXcmMessageCounterService() {
       const [_, erroredOnAh] = messages;
       await updateXcmMessageCountersViaStorage(erroredOnAh.toNumber());
     } catch (error) {
-      logger.error('Error processing XCM messages:', error);
+      Log.chainEvent({
+        chain: 'asset-hub',
+        eventType: 'XCM message processing error',
+        error: error as Error
+      });
     }
   }) as unknown as VoidFn;
 
@@ -196,14 +236,22 @@ export async function runAhXcmMessageCounterService() {
 export async function runAhFinalizedHeadsService() {
   const provider = new WsProvider(getConfig().assetHubUrl);
   const api = await ApiPromise.create({ provider });
-  const { logger } = Log;
-  logger.info('Connected to Asset Hub for finalized heads');
+  Log.connection({
+    service: 'Asset Hub Finalized Heads',
+    status: 'connected'
+  });
 
   const unsubscribe = await api.rpc.chain.subscribeFinalizedHeads((header) => {
     const blockNumber = header.number.toNumber();
     const blockHash = header.hash.toString();
 
-    logger.info(`New AH finalized head: #${blockNumber}`);
+    Log.chainEvent({
+      chain: 'asset-hub',
+      eventType: 'finalized head',
+      blockNumber,
+      blockHash,
+      details: { timestamp: new Date().toISOString() }
+    });
 
     // Emit the head event through eventService
     eventService.emit('ahHead', {

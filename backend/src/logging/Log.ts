@@ -5,6 +5,7 @@ import {
 } from 'winston/lib/winston/transports';
 
 import { consoleTransport, fileTransport } from './transports';
+import { ServiceLogData, ChainEventLogData, DatabaseLogData, ConnectionLogData } from './types';
 
 /**
  * Access a singleton winston.Logger that will be intialized on first use.
@@ -36,5 +37,49 @@ export class Log {
 
 	static get logger(): Logger {
 		return this._logger || this.create();
+	}
+
+	static service(data: ServiceLogData): void {
+		const { service, action, details, error } = data;
+		const message = `[${service}] ${action}`;
+		
+		if (error) {
+			this.logger.error(message, { details, error: error.message, stack: error.stack });
+		} else {
+			this.logger.info(message, { details });
+		}
+	}
+
+	static chainEvent(data: ChainEventLogData): void {
+		const { chain, eventType, blockNumber, blockHash, details, error } = data;
+		const message = `[${chain}] ${eventType}${blockNumber ? ` at block #${blockNumber}` : ''}`;
+		
+		if (error) {
+			this.logger.error(message, { blockHash, details, error: error.message, stack: error.stack });
+		} else {
+			this.logger.info(message, { blockHash, details });
+		}
+	}
+
+	static database(data: DatabaseLogData): void {
+		const { operation, table, details, error } = data;
+		const message = `[DB] ${operation} on ${table}`;
+		
+		if (error) {
+			this.logger.error(message, { details, error: error.message, stack: error.stack });
+		} else {
+			this.logger.info(message, { details });
+		}
+	}
+
+	static connection(data: ConnectionLogData): void {
+		const { service, status, details, error } = data;
+		const message = `[${service}] ${status}`;
+		
+		if (error) {
+			this.logger.error(message, { details, error: error.message, stack: error.stack });
+		} else {
+			this.logger.info(message, { details });
+		}
 	}
 }

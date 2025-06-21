@@ -22,14 +22,22 @@ interface RcHeadsServiceData {
 export async function runRcFinalizedHeadsService() {
   const provider = new WsProvider(getConfig().relayChainUrl);
   const api = await ApiPromise.create({ provider });
-  const { logger } = Log;
-  logger.info('Connected to Relay Chain for finalized heads');
+  Log.connection({
+    service: 'Relay Chain Finalized Heads',
+    status: 'connected'
+  });
 
   const unsubscribe = await api.rpc.chain.subscribeFinalizedHeads((header) => {
     const blockNumber = header.number.toNumber();
     const blockHash = header.hash.toString();
 
-    logger.info(`New RC finalized head: #${blockNumber}`);
+    Log.chainEvent({
+      chain: 'relay-chain',
+      eventType: 'finalized head',
+      blockNumber,
+      blockHash,
+      details: { timestamp: new Date().toISOString() }
+    });
 
     // Emit the head event through eventService
     eventService.emit('rcHead', {
@@ -43,16 +51,24 @@ export async function runRcFinalizedHeadsService() {
 }
 
 export const runRcHeadsService = async (scheduledBlockNumber?: number): Promise<VoidFn> => {
-  const { logger } = Log;
   const provider = new WsProvider(getConfig().relayChainUrl);
   const api = await ApiPromise.create({ provider });
-  logger.info('Connected to Relay Chain');
+  Log.connection({
+    service: 'Relay Chain Heads',
+    status: 'connected'
+  });
 
   const unsubscribe = await api.rpc.chain.subscribeFinalizedHeads((header) => {
     const blockNumber = header.number.toNumber();
     const blockHash = header.hash.toString();
 
-    logger.info(`New RC finalized head: #${blockNumber}`);
+    Log.chainEvent({
+      chain: 'relay-chain',
+      eventType: 'finalized head',
+      blockNumber,
+      blockHash,
+      details: { timestamp: new Date().toISOString() }
+    });
 
     // Emit the head event through eventService
     eventService.emit('rcHead', {
@@ -62,7 +78,11 @@ export const runRcHeadsService = async (scheduledBlockNumber?: number): Promise<
     });
 
     if (scheduledBlockNumber && blockNumber >= scheduledBlockNumber) {
-      logger.info(`Reached scheduled block #${scheduledBlockNumber}`);
+      Log.service({
+        service: 'Relay Chain Heads',
+        action: 'Reached scheduled block',
+        details: { scheduledBlockNumber, currentBlock: blockNumber }
+      });
       unsubscribe();
     }
   });
@@ -71,7 +91,6 @@ export const runRcHeadsService = async (scheduledBlockNumber?: number): Promise<
 };
 
 export async function runRcMigrationStageService(): Promise<VoidFn> {
-  const { logger } = Log;
   const api = await AbstractApi.getInstance().getRelayChainApi();
 
   const unsubscribeMigrationStage = await api.query.rcMigrator.rcMigrationStage(async (migrationStage: PalletRcMigratorMigrationStage) => {
@@ -95,7 +114,11 @@ export async function runRcMigrationStageService(): Promise<VoidFn> {
           scheduledBlock
         });
         isMigrationScheduled = true;
-        logger.info(`Migration scheduled for block #${scheduledBlock}`);
+        Log.service({
+          service: 'Migration Stage',
+          action: 'Migration scheduled',
+          details: { scheduledBlock: scheduledBlock.toNumber() }
+        });
       }
 
       if (!migrationStage.isPending) {
@@ -104,7 +127,10 @@ export async function runRcMigrationStageService(): Promise<VoidFn> {
         });
         isMigrationScheduled = true;
         // TODO: Remove this once we have a way to detect if the migration has already started
-        logger.info('Migration already started, enabling skip and start...');
+        Log.service({
+          service: 'Migration Stage',
+          action: 'Migration already started, enabling skip and start'
+        });
       }
 
       eventService.emit('rcStageUpdate', {
@@ -116,13 +142,19 @@ export async function runRcMigrationStageService(): Promise<VoidFn> {
         timestamp: new Date().toISOString(),
       });
 
-      logger.info('Migration stage updated:', {
-        stage: migrationStage.type,
+      Log.chainEvent({
         chain: 'relay-chain',
+        eventType: 'migration stage update',
         blockNumber: header.number.toNumber(),
+        blockHash: header.hash.toHex(),
+        details: { stage: migrationStage.type }
       });
     } catch (error) {
-      logger.info('Error processing migration stage:', error);
+      Log.chainEvent({
+        chain: 'relay-chain',
+        eventType: 'migration stage processing error',
+        error: error as Error
+      });
     }
   }) as unknown as VoidFn;
 
@@ -130,8 +162,6 @@ export async function runRcMigrationStageService(): Promise<VoidFn> {
 }
 
 async function updateXcmMessageCounters(sentToAh: number, processedOnAh: number) {
-  const { logger } = Log;
-  
   try {
     // Update the RC->AH counter with processed messages
     await db.update(xcmMessageCounters)
@@ -168,10 +198,18 @@ async function updateXcmMessageCounters(sentToAh: number, processedOnAh: number)
         lastUpdated: counterRc.lastUpdated,
       };
       
-      logger.info('Emitting rcXcmMessageCounter event with data:', eventData);
+      Log.service({
+        service: 'XCM Message Counter',
+        action: 'Emitting rcXcmMessageCounter event',
+        details: eventData
+      });
       eventService.emit('rcXcmMessageCounter', eventData);
     } else {
-      logger.warn('No counter found after update');
+      Log.service({
+        service: 'XCM Message Counter',
+        action: 'No RC counter found after update',
+        details: { sourceChain: 'relay-chain' }
+      });
     }
 
     if (counterAh) {
@@ -184,20 +222,35 @@ async function updateXcmMessageCounters(sentToAh: number, processedOnAh: number)
         lastUpdated: counterAh.lastUpdated,
       };
 
-      logger.info('Emitting ahXcmMessageCounter event with data:', eventData);
+      Log.service({
+        service: 'XCM Message Counter',
+        action: 'Emitting ahXcmMessageCounter event',
+        details: eventData
+      });
       eventService.emit('ahXcmMessageCounter', eventData);
     } else {
-      logger.warn('No counter found after update');
+      Log.service({
+        service: 'XCM Message Counter',
+        action: 'No AH counter found after update',
+        details: { sourceChain: 'asset-hub' }
+      });
     }
 
-    logger.info(`Updated XCM message counter for relay-chain -> asset-hub: ${sentToAh} sent, ${processedOnAh} processed messages`);
+    Log.service({
+      service: 'XCM Message Counter',
+      action: 'Updated counters',
+      details: { sentToAh, processedOnAh }
+    });
   } catch (error) {
-    logger.error('Error updating XCM message counter:', error);
+    Log.service({
+      service: 'XCM Message Counter',
+      action: 'Error updating counters',
+      error: error as Error
+    });
   }
 }
 
 export async function runRcXcmMessageCounterService() {
-  const { logger } = Log;
   const api = await AbstractApi.getInstance().getRelayChainApi();
 
   const unsubscribeXcmMessages = await api.query.rcMigrator.dmpDataMessageCounts(async (messages: ITuple<[u32, u32]>) => {
@@ -205,7 +258,11 @@ export async function runRcXcmMessageCounterService() {
       const [sentToAh, processedOnAh] = messages;
       await updateXcmMessageCounters(sentToAh.toNumber(), processedOnAh.toNumber());
     } catch (error) {
-      logger.error('Error processing XCM messages:', error);
+      Log.chainEvent({
+        chain: 'relay-chain',
+        eventType: 'XCM message processing error',
+        error: error as Error
+      });
     }
   }) as unknown as VoidFn;
 
@@ -226,7 +283,6 @@ export async function runRcBalancesService() {
 }
 
 export async function runRcDmpDataMessageCountsService() {
-  const { logger } = Log;
   const api = await AbstractApi.getInstance().getRelayChainApi();
 
   let previousQueueSize = 0;
@@ -269,12 +325,27 @@ export async function runRcDmpDataMessageCountsService() {
           timestamp: new Date().toISOString(),
         });
 
-        logger.info(`DMP queue event recorded: ${eventType}, size: ${currentQueueSize}, bytes: ${totalSizeBytes}, block: ${header.number.toNumber()}`);
+        Log.chainEvent({
+          chain: 'relay-chain',
+          eventType: `DMP queue ${eventType}`,
+          blockNumber: header.number.toNumber(),
+          blockHash: header.hash.toString(),
+          details: {
+            queueSize: currentQueueSize,
+            totalSizeBytes,
+            previousSize: previousQueueSize,
+            change: currentQueueSize - previousQueueSize
+          }
+        });
       }
 
       previousQueueSize = currentQueueSize;
     } catch (error) {
-      logger.error('Error processing DMP queue event:', error);
+      Log.chainEvent({
+        chain: 'relay-chain',
+        eventType: 'DMP queue processing error',
+        error: error as Error
+      });
     }
   }) as unknown as VoidFn;
 

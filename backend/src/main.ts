@@ -15,8 +15,6 @@ import { updatesHandler } from './routes/updates';
 
 import { getConfig } from './config';
 
-const { logger } = Log;
-
 const app = express();
 const port = getConfig().port;
 const DISABLE_HEADS_SERVICE = true;
@@ -24,10 +22,17 @@ const DISABLE_HEADS_SERVICE = true;
 // Initialize the database
 initializeDb()
   .then(() => {
-    logger.info('Database initialized successfully');
+    Log.service({
+      service: 'Database',
+      action: 'Initialized successfully'
+    });
   })
   .catch((err) => {
-    logger.error('Error initializing database:', err);
+    Log.service({
+      service: 'Database',
+      action: 'Initialization error',
+      error: err as Error
+    });
   });
 
 // Enable CORS
@@ -57,63 +62,105 @@ runRcFinalizedHeadsService()
   .then((result) => {
     cleanupRcFinalizedHeads = result;
   })
-  .catch(err => logger.error(err));
+  .catch(err => Log.service({
+    service: 'RC Finalized Heads',
+    action: 'Service start error',
+    error: err as Error
+  }));
 
 runAhMigrationStageService()
   .then((result) => {
     cleanupAhMigrationStage = result;
   })
-  .catch(err => logger.error(err));
+  .catch(err => Log.service({
+    service: 'AH Migration Stage',
+    action: 'Service start error',
+    error: err as Error
+  }));
 
 // Start the migration stage service
 runRcMigrationStageService()
   .then((result) => {
     cleanupMigrationStage = result;
   })
-  .catch(err => logger.error(err));
+  .catch(err => Log.service({
+    service: 'RC Migration Stage',
+    action: 'Service start error',
+    error: err as Error
+  }));
 
 runRcXcmMessageCounterService()
   .then((result) => {
     cleanupRcXcmMessageCounter = result;
   })
-  .catch(err => logger.error(err));
+  .catch(err => Log.service({
+    service: 'RC XCM Message Counter',
+    action: 'Service start error',
+    error: err as Error
+  }));
 
 runAhXcmMessageCounterService()
   .then((result) => {
     cleanupAhXcmMessageCounter = result;
   })
-  .catch(err => logger.error(err));
+  .catch(err => Log.service({
+    service: 'AH XCM Message Counter',
+    action: 'Service start error',
+    error: err as Error
+  }));
 
 // Start the AH finalized heads service
 runAhFinalizedHeadsService()
   .then((result) => {
     cleanupAhFinalizedHeads = result;
   })
-  .catch(err => logger.error(err));
+  .catch(err => Log.service({
+    service: 'AH Finalized Heads',
+    action: 'Service start error',
+    error: err as Error
+  }));
 
 // Start the RC balances service
 runRcBalancesService()
   .then((result) => {
     cleanupRcBalances = result;
   })
-  .catch(err => logger.error(err));
+  .catch(err => Log.service({
+    service: 'RC Balances',
+    action: 'Service start error',
+    error: err as Error
+  }));
 
 runRcDmpDataMessageCountsService()
   .then((result) => {
     cleanupRcDmpDataMessageCounts = result;
   })
-  .catch(err => logger.error(err));
+  .catch(err => Log.service({
+    service: 'RC DMP Data Message Counts',
+    action: 'Service start error',
+    error: err as Error
+  }));
 
 // Listen for the migrationScheduled event
 eventService.on('migrationScheduled', async (data) => {
-  logger.info('Migration scheduled event received:', data);
+  Log.service({
+    service: 'Migration Scheduler',
+    action: 'Migration scheduled event received',
+    details: data
+  });
   
   if (DISABLE_HEADS_SERVICE) {
-    logger.info('Heads service is disabled. Skipping...');
+    Log.service({
+      service: 'Migration Scheduler',
+      action: 'Heads service disabled, skipping'
+    });
   } else {
     // Clean up existing heads subscription if it exists
     if (cleanupHeads) {
-      logger.info('Cleaning up existing heads subscription...');
+      Log.service({
+        service: 'Migration Scheduler',
+        action: 'Cleaning up existing heads subscription'
+      });
       cleanupHeads();
       cleanupHeads = null;
     }
@@ -122,9 +169,17 @@ eventService.on('migrationScheduled', async (data) => {
     try {
       cleanupHeads = await runRcHeadsService(data);
       cleanupAhHeads = await runAhHeadsService();
-      logger.info(`Started monitoring heads for scheduled block #${data.scheduledBlockNumber}`);
+      Log.service({
+        service: 'Migration Scheduler',
+        action: 'Started monitoring heads for scheduled block',
+        details: { scheduledBlockNumber: data.scheduledBlockNumber }
+      });
     } catch (error) {
-      logger.error('Error starting heads service:', error);
+      Log.service({
+        service: 'Migration Scheduler',
+        action: 'Error starting heads service',
+        error: error as Error
+      });
     }
   }
 });
@@ -133,70 +188,111 @@ eventService.on('migrationScheduled', async (data) => {
 const signals = ['SIGINT', 'SIGTERM', 'SIGQUIT'] as const;
 signals.forEach((signal) => {
   process.on(signal, async () => {
-    logger.info(`\nReceived ${signal}. Starting graceful shutdown...`);
+    Log.service({
+      service: 'Application',
+      action: 'Received termination signal, starting graceful shutdown',
+      details: { signal }
+    });
 
     if (cleanupMigrationStage) {
-      logger.info('Cleaning up migration stage subscription...');
+      Log.service({
+        service: 'Application',
+        action: 'Cleaning up migration stage subscription'
+      });
       cleanupMigrationStage();
     }
     
     if (cleanupAhHeads) {
-      logger.info('Cleaning up ah heads subscription...');
+      Log.service({
+        service: 'Application',
+        action: 'Cleaning up AH heads subscription'
+      });
       cleanupAhHeads();
     }
 
     if (cleanupRcXcmMessageCounter) {
-      logger.info('Cleaning up rc xcm message counter subscription...');
+      Log.service({
+        service: 'Application',
+        action: 'Cleaning up RC XCM message counter subscription'
+      });
       cleanupRcXcmMessageCounter();
     }
 
     if (cleanupAhXcmMessageCounter) {
-      logger.info('Cleaning up ah xcm message counter subscription...');
+      Log.service({
+        service: 'Application',
+        action: 'Cleaning up AH XCM message counter subscription'
+      });
       cleanupAhXcmMessageCounter();
     }
 
     if (cleanupHeads) {
-      logger.info('Cleaning up heads subscription...');
+      Log.service({
+        service: 'Application',
+        action: 'Cleaning up heads subscription'
+      });
       cleanupHeads();
     } 
 
     if (cleanupAhFinalizedHeads) {
-      logger.info('Cleaning up ah finalized heads subscription...');
+      Log.service({
+        service: 'Application',
+        action: 'Cleaning up AH finalized heads subscription'
+      });
       cleanupAhFinalizedHeads();
     }
 
     if (cleanupRcFinalizedHeads) {
-      logger.info('Cleaning up rc finalized heads subscription...');
+      Log.service({
+        service: 'Application',
+        action: 'Cleaning up RC finalized heads subscription'
+      });
       cleanupRcFinalizedHeads();
     }
 
     if (cleanupRcBalances) {
-      logger.info('Cleaning up rc balances subscription...');
+      Log.service({
+        service: 'Application',
+        action: 'Cleaning up RC balances subscription'
+      });
       cleanupRcBalances();
     }
 
     if (cleanupRcDmpDataMessageCounts) {
-      logger.info('Cleaning up rc dmp data message counts subscription...');
+      Log.service({
+        service: 'Application',
+        action: 'Cleaning up RC DMP data message counts subscription'
+      });
       cleanupRcDmpDataMessageCounts();
     }
 
     server.close(() => {
-      logger.info('Server closed. Exiting...');
+      Log.service({
+        service: 'Application',
+        action: 'Server closed, exiting'
+      });
       process.exit(0);
     });
 
     // Force exit after 5 seconds if cleanup takes too long
     setTimeout(() => {
-      logger.error('Forced exit after timeout');
+      Log.service({
+        service: 'Application',
+        action: 'Forced exit after timeout'
+      });
       process.exit(1);
     }, 5000);
   });
 });
 
 const server = app.listen(port, () => {
-  logger.info(`Server running on port ${port}`);
-  logger.info('Connected to:', {
-    assetHub: getConfig().assetHubUrl,
-    relayChain: getConfig().relayChainUrl,
+  Log.service({
+    service: 'Application',
+    action: 'Server started',
+    details: { 
+      port,
+      assetHub: getConfig().assetHubUrl,
+      relayChain: getConfig().relayChainUrl
+    }
   });
 });

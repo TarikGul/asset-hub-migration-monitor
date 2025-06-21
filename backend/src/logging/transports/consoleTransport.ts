@@ -1,7 +1,7 @@
 import { format, transports } from 'winston';
 
 import { getConfig } from '../../config';
-import { nodeUtilFormat, stripTimestamp, timeStamp } from '../transformers';
+import { stripTimestamp, timeStamp } from '../transformers';
 import { ITransformableInfo } from '../types';
 
 /**
@@ -18,10 +18,23 @@ export function consoleTransport(): transports.ConsoleTransportInstance {
 			return `${typedInfo?.timestamp} ${typedInfo?.level}: ${typedInfo?.message} \n ${typedInfo?.stack}`;
 		}
 
-		return `${typedInfo?.timestamp} ${typedInfo?.level}: ${typedInfo?.message}`;
+		// Include details on the same line if they exist
+		let output = `${typedInfo?.timestamp} ${typedInfo?.level}: ${typedInfo?.message}`;
+		
+		// Add details if they exist (from our standardized logging)
+		if (typedInfo?.details) {
+			output += ` | ${JSON.stringify(typedInfo.details)}`;
+		}
+		
+		// Add error message if it exists (from our standardized logging)
+		if (typedInfo?.error) {
+			output += ` | Error: ${typedInfo.error}`;
+		}
+
+		return output;
 	});
 
-	const transformers = [stripTimestamp(), nodeUtilFormat(), timeStamp];
+	const transformers = [stripTimestamp(), timeStamp];
 
 	if (!process.env.LOG_JSON) {
 		transformers.push(format.colorize(), simplePrint);
