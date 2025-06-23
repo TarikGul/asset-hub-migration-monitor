@@ -75,9 +75,95 @@ const XcmMessageMetrics: React.FC = () => {
         </div>
       </div>
       
+      <div className="queue-sections">
+        {/* DMP Queue Section */}
+        <div className="queue-section">
+          <div className="queue-section-header">
+            <h3 className="queue-section-title">DMP Queue (Downward Message Passing)</h3>
+            <div className="queue-section-status">
+              <div className="queue-status status-excellent"></div>
+              <span className="queue-section-throughput">Excellent</span>
+            </div>
+          </div>
+          
+          <div className="queue-section-metrics">
+            <div className="queue-section-metric">
+              <div className="queue-section-value">0</div>
+              <div className="queue-section-label">Current Depth</div>
+            </div>
+            <div className="queue-section-metric">
+              <div className="queue-section-value">0</div>
+              <div className="queue-section-label">Msg/min</div>
+            </div>
+            <div className="queue-section-metric">
+              <div className="queue-section-value">0s</div>
+              <div className="queue-section-label">Avg Processing</div>
+            </div>
+            <div className="queue-section-metric">
+              <div className="queue-section-value">0KB</div>
+              <div className="queue-section-label">Avg Size</div>
+            </div>
+          </div>
+          
+          <div className="queue-section-details">
+            <div className="queue-section-trend trend-down">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 4L12 20M12 20L18 14M12 20L6 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Queue decreasing
+            </div>
+            <div className="queue-section-throughput">
+              <span className="throughput-speed speed-fast">Fast</span> • 0 msg/min
+            </div>
+          </div>
+        </div>
+        
+        {/* UMP Queue Section */}
+        <div className="queue-section">
+          <div className="queue-section-header">
+            <h3 className="queue-section-title">UMP Queue (Upward Message Passing)</h3>
+            <div className="queue-section-status">
+              <div className="queue-status status-good"></div>
+              <span className="queue-section-throughput">Good</span>
+            </div>
+          </div>
+          
+          <div className="queue-section-metrics">
+            <div className="queue-section-metric">
+              <div className="queue-section-value">0</div>
+              <div className="queue-section-label">Current Depth</div>
+            </div>
+            <div className="queue-section-metric">
+              <div className="queue-section-value">0</div>
+              <div className="queue-section-label">Msg/min</div>
+            </div>
+            <div className="queue-section-metric">
+              <div className="queue-section-value">0s</div>
+              <div className="queue-section-label">Avg Processing</div>
+            </div>
+            <div className="queue-section-metric">
+              <div className="queue-section-value">0KB</div>
+              <div className="queue-section-label">Avg Size</div>
+            </div>
+          </div>
+          
+          <div className="queue-section-details">
+            <div className="queue-section-trend trend-stable">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+              Queue stable
+            </div>
+            <div className="queue-section-throughput">
+              <span className="throughput-speed speed-fast">Fast</span> • 0 msg/min
+            </div>
+          </div>
+        </div>
+      </div>
+      
       <div className="chart-container">
         <div className="chart-placeholder">
-          XCM Message Queue Graph
+          XCM Message Queue Depth & Throughput Graph
         </div>
       </div>
     </section>

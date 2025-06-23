@@ -1,5 +1,6 @@
 .xcm-messages {
-  grid-column: span 4;
+  grid-column: 7 / 13;
+  grid-row: 1 / 3;
 }
 
 /* Message metrics */
@@ -32,6 +33,185 @@
   display: flex;
   align-items: center;
   gap: 0.25rem;
+}
+
+/* Enhanced XCM metrics */
+.xcm-queue-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.queue-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  background-color: var(--light-bg);
+  border-radius: 6px;
+}
+
+.queue-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.queue-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.queue-status {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.status-excellent {
+  background-color: var(--success);
+}
+
+.status-good {
+  background-color: #4CAF50;
+}
+
+.status-fair {
+  background-color: var(--warning);
+}
+
+.status-poor {
+  background-color: var(--danger);
+}
+
+.queue-depth {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.queue-throughput {
+  font-size: 0.75rem;
+  color: var(--text-light);
+}
+
+.throughput-speed {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 600;
+}
+
+.speed-fast {
+  color: var(--success);
+}
+
+.speed-medium {
+  color: var(--warning);
+}
+
+.speed-slow {
+  color: var(--danger);
+}
+
+.queue-trend {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+}
+
+.trend-up {
+  color: var(--success);
+}
+
+.trend-down {
+  color: var(--danger);
+}
+
+.trend-stable {
+  color: var(--text-light);
+}
+
+/* Separate DMP/UMP sections */
+.queue-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.queue-section {
+  background-color: var(--light-bg);
+  border-radius: 8px;
+  padding: 1.25rem;
+}
+
+.queue-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.queue-section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.queue-section-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.queue-section-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.queue-section-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.queue-section-value {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.queue-section-label {
+  font-size: 0.75rem;
+  color: var(--text-light);
+}
+
+.queue-section-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.queue-section-trend {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.queue-section-throughput {
+  font-size: 0.875rem;
+  font-weight: 500;
 }
 
 /* Charts */

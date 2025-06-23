@@ -127,11 +127,16 @@ main {
 }
 
 .migration-status {
-  grid-column: span 8;
+  grid-column: 1 / 7;
 }
 
 .xcm-messages {
-  grid-column: span 4;
+  grid-column: 7 / 13;
+  grid-row: 1 / 3;
+}
+
+.pallet-status {
+  grid-column: 1 / 7;
 }
 
 /* Stage indicator */
