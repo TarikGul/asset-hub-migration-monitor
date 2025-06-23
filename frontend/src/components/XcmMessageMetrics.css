@@ -1,3 +1,5 @@
+@import '../styles/common.css';
+
 .xcm-messages {
   grid-column: 7 / 13;
   grid-row: 1 / 3;
@@ -217,7 +219,7 @@
 /* Charts */
 .chart-container {
   width: 100%;
-  height: 150px;
+  height: 250px;
   margin-top: 1rem;
   position: relative;
 }

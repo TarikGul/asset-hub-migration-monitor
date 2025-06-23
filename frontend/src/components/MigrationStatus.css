@@ -1,5 +1,7 @@
+@import '../styles/common.css';
+
 .migration-status {
-  grid-column: span 8;
+  grid-column: 1 / 7;
 }
 
 /* Stage indicator */
@@ -21,7 +23,7 @@
   font-size: 0.875rem;
 }
 
-/* Progress bar */
+/* Progress container */
 .progress-container {
   margin-bottom: 1.5rem;
 }
@@ -40,21 +42,6 @@
 .progress-value {
   font-size: 0.875rem;
   font-weight: 600;
-}
-
-.progress-bar {
-  height: 8px;
-  width: 100%;
-  background-color: var(--border);
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  background-color: var(--primary);
-  border-radius: 4px;
-  width: 0%;
 }
 
 /* Timeline */
