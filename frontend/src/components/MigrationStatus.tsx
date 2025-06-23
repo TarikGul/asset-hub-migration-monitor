@@ -1,29 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { useEventSource } from '../hooks/useEventSource';
 import type { EventType } from '../hooks/useEventSource';
+import { MIGRATION_PALLETS } from '../constants/migrationPallets';
 import './MigrationStatus.css';
-
-// Migration pallets in order
-const MIGRATION_PALLETS = [
-  'Accounts',
-  'Multisig',
-  'Claims',
-  'Proxy',
-  'Preimage',
-  'NomPools',
-  'Vesting',
-  'FastUnstake',
-  'Indices',
-  'Referenda',
-  'BagsList',
-  'Scheduler',
-  'ConvictionVoting',
-  'Bounties',
-  'AssetRate',
-  'Crowdloan',
-  'Treasury',
-  'Staking'
-];
 
 interface MigrationStage {
   stage: string;

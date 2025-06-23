@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import MigrationStatus from './components/MigrationStatus';
+import PerPalletMigrationStatus from './components/PerPalletMigrationStatus';
 import XcmMessageMetrics from './components/XcmMessageMetrics';
 import { useEventSource } from './hooks/useEventSource';
 import type { EventType } from './hooks/useEventSource';
@@ -44,6 +45,7 @@ function App() {
       </header>
       <main>
         <MigrationStatus />
+        <PerPalletMigrationStatus />
         <XcmMessageMetrics />
       </main>
     </div>
