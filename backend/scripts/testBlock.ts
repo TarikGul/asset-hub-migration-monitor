@@ -1,5 +1,4 @@
 import { AbstractApi } from '../src/services/abstractApi';
-import { processBlock } from '../src/services/xcmProcessing';
 import { findXcmMessages } from '../src/services/ahService';
 
 type ChainType = 'asset-hub' | 'relay-chain';

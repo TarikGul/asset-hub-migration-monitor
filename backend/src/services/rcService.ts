@@ -5,7 +5,6 @@ import type { PolkadotCorePrimitivesInboundDownwardMessage } from '@polkadot/typ
 import { db } from '../db';
 import { migrationStages, dmpQueueEvents } from '../db/schema';
 import { AbstractApi } from './abstractApi';
-import { processBlock } from './xcmProcessing';
 import { VoidFn } from '@polkadot/api/types';
 import { eventService } from './eventService';
 import { xcmMessageCounters } from '../db/schema';
@@ -13,11 +12,6 @@ import { Log } from '../logging/Log';
 import { eq } from 'drizzle-orm';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { getConfig } from '../config';
-
-interface RcHeadsServiceData {
-  scheduledBlockNumber?: u32;
-  skipAndStart?: boolean;
-}
 
 export async function runRcFinalizedHeadsService() {
   const provider = new WsProvider(getConfig().relayChainUrl);
