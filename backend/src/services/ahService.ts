@@ -1,5 +1,5 @@
 import { db } from '../db';
-import { xcmMessageCounters, migrationStages } from '../db/schema';
+import { xcmMessageCounters, migrationStages, messageProcessingEventsAH } from '../db/schema';
 import { sql, eq } from 'drizzle-orm';
 
 import type { ITuple } from '@polkadot/types/types';
@@ -260,6 +260,48 @@ export async function runAhFinalizedHeadsService() {
       timestamp: new Date().toISOString()
     });
   });
+
+  return unsubscribe;
+}
+
+// TODO: This service should also be aggregating events for the pre-pallet statuses.
+// We need to ensure that it checks for messageQueue first to ensure we get as accurate latency reports as possible.
+// This means we need to store and organize all the events locally, send them to some function to batch all the events to the db.
+export async function runAhEventsService() {
+  const api = await AbstractApi.getInstance().getAssetHubApi();
+
+  const unsubscribe = await api.query.system.events(async (events) => {
+    for (const record of events) {
+      const { event } = record;
+      if (event.section === 'messageQueue' && event.method === 'Processed') {
+        try {
+          // Get current block information
+          const header = await api.rpc.chain.getHeader();
+          const blockNumber = header.number.toNumber();
+          
+          // Save to database
+          await db.insert(messageProcessingEventsAH).values({
+            blockNumber,
+            timestamp: new Date(),
+          });
+
+          Log.chainEvent({
+            chain: 'asset-hub',
+            eventType: 'MessageQueue.Processed',
+            blockNumber,
+            details: { eventData: event.toJSON() }
+          });
+
+        } catch (error) {
+          Log.chainEvent({
+            chain: 'asset-hub',
+            eventType: 'MessageQueue.Processed database error',
+            error: error as Error
+          });
+        }
+      }
+    }
+  })
 
   return unsubscribe;
 }
