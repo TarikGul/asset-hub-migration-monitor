@@ -12,60 +12,6 @@ import type { Block } from '@polkadot/types/interfaces';
 import { VoidFn } from '@polkadot/api/types';
 import { getConfig } from '../config';
 
-async function updateXcmMessageCountersViaEvents(upwardMessageSent: number, downwardMessagesProcessed: number) {
-  try {
-    // Update the AH->RC counter with processed messages
-    await db.update(xcmMessageCounters)
-      .set({
-        messagesProcessed: sql`${xcmMessageCounters.messagesProcessed} + ${downwardMessagesProcessed}`,
-        messagesSent: sql`${xcmMessageCounters.messagesSent} + ${upwardMessageSent}`,
-        lastUpdated: new Date(),
-      })
-      .where(eq(xcmMessageCounters.sourceChain, 'asset-hub'));
-
-    // Get the updated counter
-    const counter = await db.query.xcmMessageCounters.findFirst({
-      where: (counters, { eq }) => eq(counters.sourceChain, 'asset-hub'),
-    });
-
-    if (counter) {
-      const eventData = {
-        sourceChain: counter.sourceChain,
-        destinationChain: counter.destinationChain,
-        messagesSent: counter.messagesSent,
-        messagesProcessed: counter.messagesProcessed,
-        messagesFailed: counter.messagesFailed,
-        lastUpdated: counter.lastUpdated,
-      };
-      
-      Log.service({
-        service: 'XCM Message Counter',
-        action: 'Emitting ahXcmMessageCounter event',
-        details: eventData
-      });
-      eventService.emit('ahXcmMessageCounter', eventData);
-    } else {
-      Log.service({
-        service: 'XCM Message Counter',
-        action: 'No counter found after update',
-        details: { sourceChain: 'asset-hub' }
-      });
-    }
-
-    Log.service({
-      service: 'XCM Message Counter',
-      action: 'Updated counters via events',
-      details: { upwardMessageSent, downwardMessagesProcessed }
-    });
-  } catch (error) {
-    Log.service({
-      service: 'XCM Message Counter',
-      action: 'Error updating counters via events',
-      error: error as Error
-    });
-  }
-}
-
 export const runAhHeadsService = async (): Promise<VoidFn> => {
   const provider = new WsProvider(getConfig().assetHubUrl);
   const api = await ApiPromise.create({ provider });
@@ -263,7 +209,6 @@ export async function runAhFinalizedHeadsService() {
 
   return unsubscribe;
 }
-
 // TODO: This service should also be aggregating events for the pre-pallet statuses.
 // We need to ensure that it checks for messageQueue first to ensure we get as accurate latency reports as possible.
 // This means we need to store and organize all the events locally, send them to some function to batch all the events to the db.
