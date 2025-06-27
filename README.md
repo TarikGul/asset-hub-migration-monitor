@@ -8,6 +8,7 @@ A monitoring dashboard for Asset Hub migration status and XCM message tracking.
 - Yarn package manager
     - If you dont have run you can install it with npm globally: `npm install -g yarn`
 - Just command runner (`brew install just` on macOS)
+- Docker (optional, for containerized deployment)
 
 ## Environment Variables
 
@@ -39,6 +40,66 @@ This command will:
 - Build both frontend and backend
 - Migrate and create the DB
 - Start both development servers
+
+## Docker Support
+
+### Running Backend with Docker
+
+The backend can be run in a Docker container for easy deployment and consistency across environments.
+
+#### Using Docker Compose (Recommended)
+
+```bash
+# Build and start the backend
+docker-compose up --build
+
+# Run in background
+docker-compose up -d --build
+
+# Stop the service
+docker-compose down
+```
+
+#### Using Docker Commands
+
+```bash
+# Build the image
+docker build -t ah-monitoring-backend ./backend
+
+# Run the container
+docker run -p 3000:3000 -v $(pwd)/backend/data:/app/data ah-monitoring-backend
+
+# Run in background
+docker run -d -p 3000:3000 -v $(pwd)/backend/data:/app/data --name ah-backend ah-monitoring-backend
+
+# Stop the container
+docker stop ah-backend
+
+# Remove the container
+docker rm ah-backend
+```
+
+#### Environment Variables with Docker
+
+You can pass environment variables to the Docker container:
+
+```bash
+# Using docker run
+docker run -p 3000:3000 \
+  -e ASSET_HUB_URL="wss://your-asset-hub-node.io" \
+  -e RELAY_CHAIN_URL="wss://your-relay-chain-node.io" \
+  -v $(pwd)/backend/data:/app/data \
+  ah-monitoring-backend
+
+# Using docker-compose (add to docker-compose.yml)
+environment:
+  - ASSET_HUB_URL=wss://your-asset-hub-node.io
+  - RELAY_CHAIN_URL=wss://your-relay-chain-node.io
+```
+
+#### Database Persistence
+
+The SQLite database is persisted in the `./backend/data` directory, which is mounted as a volume in the Docker container.
 
 ## Development
 
