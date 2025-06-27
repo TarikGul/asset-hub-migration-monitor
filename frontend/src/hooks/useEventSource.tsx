@@ -40,6 +40,34 @@ export const EventSourceProvider: React.FC<EventSourceProviderProps> = ({
   
   // Use ref to track current eventSource to avoid circular dependency
   const eventSourceRef = useRef<EventSource | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectAttemptsRef = useRef(0);
+  const maxReconnectAttempts = 10;
+  const baseReconnectDelay = 1000; // 1 second
+
+  const clearReconnectTimeout = useCallback(() => {
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+  }, []);
+
+  const scheduleReconnect = useCallback((url: string) => {
+    clearReconnectTimeout();
+    
+    if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
+      setError('Max reconnection attempts reached');
+      return;
+    }
+
+    const delay = baseReconnectDelay * Math.pow(2, reconnectAttemptsRef.current);
+    console.log(`Scheduling reconnection attempt ${reconnectAttemptsRef.current + 1} in ${delay}ms`);
+    
+    reconnectTimeoutRef.current = setTimeout(() => {
+      reconnectAttemptsRef.current++;
+      createEventSource(url);
+    }, delay);
+  }, [clearReconnectTimeout]);
 
   const createEventSource = useCallback((url: string) => {
     // Close existing connection
@@ -61,6 +89,9 @@ export const EventSourceProvider: React.FC<EventSourceProviderProps> = ({
       if (data.connected) {
         setIsConnected(true);
         setError(null);
+        // Reset reconnect attempts on successful connection
+        reconnectAttemptsRef.current = 0;
+        clearReconnectTimeout();
       }
     });
 
@@ -86,30 +117,40 @@ export const EventSourceProvider: React.FC<EventSourceProviderProps> = ({
       es.close();
       eventSourceRef.current = null;
       setEventSource(null);
+      
+      // Schedule automatic reconnection
+      scheduleReconnect(url);
     };
 
     return es;
-  }, [listeners]);
+  }, [listeners, scheduleReconnect, clearReconnectTimeout]);
 
   // Initialize EventSource connection
   useEffect(() => {
     const es = createEventSource(backendUrl);
     
     return () => {
+      clearReconnectTimeout();
       if (es) {
         es.close();
         eventSourceRef.current = null;
       }
     };
-  }, [backendUrl, createEventSource]);
+  }, [backendUrl, createEventSource, clearReconnectTimeout]);
 
   const setBackendUrl = useCallback((url: string) => {
+    // Clear any pending reconnection attempts when URL changes
+    clearReconnectTimeout();
+    reconnectAttemptsRef.current = 0;
     setBackendUrlState(url);
-  }, []);
+  }, [clearReconnectTimeout]);
 
   const reconnect = useCallback(() => {
+    // Reset reconnect attempts for manual reconnection
+    reconnectAttemptsRef.current = 0;
+    clearReconnectTimeout();
     createEventSource(backendUrl);
-  }, [backendUrl, createEventSource]);
+  }, [backendUrl, createEventSource, clearReconnectTimeout]);
 
   const subscribe = useCallback((events: EventType[], callback: (eventType: EventType, data: any) => void) => {
     // Add the callback to listeners for each event type
