@@ -3,4 +3,5 @@ build
 build-scripts
 .git
 *.log
-.env 
+.env
+# Don't exclude drizzle directory as it's needed for migrations 

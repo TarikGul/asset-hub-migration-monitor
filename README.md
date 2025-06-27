@@ -97,9 +97,19 @@ environment:
   - RELAY_CHAIN_URL=wss://your-relay-chain-node.io
 ```
 
+**Important**: If your WebSocket endpoints are running on the host machine (localhost), use `host.docker.internal` instead of `127.0.0.1` or `localhost`:
+
+```bash
+# For services running on your host machine
+-e ASSET_HUB_URL="ws://host.docker.internal:63170"
+-e RELAY_CHAIN_URL="ws://host.docker.internal:63168"
+```
+
+This allows the Docker container to connect to services running on your host machine.
+
 #### Database Persistence
 
-The SQLite database is persisted in the `./backend/data` directory, which is mounted as a volume in the Docker container.
+The SQLite database is persisted in the `./backend/data` directory, which is mounted as a volume in the Docker container. The database schema and initial data are automatically created when the container starts.
 
 ## Development
 
