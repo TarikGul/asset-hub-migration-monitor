@@ -2,13 +2,16 @@ import React, { useState, useCallback } from 'react';
 import MigrationStatus from './components/MigrationStatus';
 import PerPalletMigrationStatus from './components/PerPalletMigrationStatus';
 import XcmMessageMetrics from './components/XcmMessageMetrics';
-import { useEventSource } from './hooks/useEventSource';
+import BackendUrlInput from './components/BackendUrlInput';
+import { useEventSource, useBackendUrl } from './hooks/useEventSource';
 import type { EventType } from './hooks/useEventSource';
 import './App.css';
 
 function App() {
   const [rcBlockNumber, setRcBlockNumber] = useState<number | null>(null);
   const [ahBlockNumber, setAhBlockNumber] = useState<number | null>(null);
+
+  const { backendUrl, setBackendUrl, isConnected } = useBackendUrl();
 
   const handleEvent = useCallback((eventType: EventType, data: any) => {
     if (eventType === 'rcHead' && data.blockNumber) {
@@ -18,7 +21,11 @@ function App() {
     }
   }, []);
 
-  const { isConnected } = useEventSource(['rcHead', 'ahHead'], handleEvent);
+  useEventSource(['rcHead', 'ahHead'], handleEvent);
+
+  const handleBackendUrlChange = useCallback((url: string) => {
+    setBackendUrl(url);
+  }, [setBackendUrl]);
 
   return (
     <div className="app">
@@ -28,6 +35,11 @@ function App() {
           <h1>Asset Hub Migration Monitor</h1>
         </div>
         <div className="header-info">
+          <BackendUrlInput
+            currentUrl={backendUrl}
+            onUrlChange={handleBackendUrlChange}
+            isConnected={isConnected}
+          />
           <span className="timestamp">Last updated: {new Date().toLocaleString()}</span>
           <div className="finalized-heads">
             <div className="head-display">

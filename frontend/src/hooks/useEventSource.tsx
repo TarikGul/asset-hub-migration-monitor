@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState, useCallback, useRef } from 'react';
 
 export type EventType = 'rcHead' | 'ahHead' | 'rcBalances' | 'rcXcmMessageCounter' | 'ahXcmMessageCounter' | 'rcStageUpdate' | 'ahStageUpdate';
 
@@ -6,25 +6,55 @@ interface EventSourceContextType {
   subscribe: (events: EventType[], callback: (eventType: EventType, data: any) => void) => () => void;
   isConnected: boolean;
   error: string | null;
+  backendUrl: string;
+  setBackendUrl: (url: string) => void;
+  reconnect: () => void;
 }
 
 const EventSourceContext = createContext<EventSourceContextType | null>(null);
 
 interface EventSourceProviderProps {
   children: React.ReactNode;
+  initialBackendUrl?: string;
 }
 
-export const EventSourceProvider: React.FC<EventSourceProviderProps> = ({ children }) => {
+// Get initial backend URL - defaults to localhost in development
+const getInitialBackendUrl = () => {
+  // In development, default to localhost
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://localhost:8080';
+  }
+  // In production, use relative URL by default
+  return '';
+};
+
+export const EventSourceProvider: React.FC<EventSourceProviderProps> = ({ 
+  children, 
+  initialBackendUrl 
+}) => {
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [eventSource, setEventSource] = useState<EventSource | null>(null);
+  const [backendUrl, setBackendUrlState] = useState(initialBackendUrl || getInitialBackendUrl());
   const listeners = useMemo(() => new Map<EventType, Set<(data: any) => void>>(), []);
+  
+  // Use ref to track current eventSource to avoid circular dependency
+  const eventSourceRef = useRef<EventSource | null>(null);
 
-  // Initialize single EventSource connection for all events
-  useEffect(() => {
+  const createEventSource = useCallback((url: string) => {
+    // Close existing connection
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+    }
+
     const allEventTypes: EventType[] = ['rcHead', 'ahHead', 'rcBalances', 'rcXcmMessageCounter', 'ahXcmMessageCounter', 'rcStageUpdate', 'ahStageUpdate'];
-    const es = new EventSource(`http://localhost:8080/api/updates?events=${allEventTypes.join(',')}`);
+    const apiUrl = url ? `${url}/api/updates` : '/api/updates';
+    const es = new EventSource(`${apiUrl}?events=${allEventTypes.join(',')}`);
+    
+    eventSourceRef.current = es;
     setEventSource(es);
+    setIsConnected(false);
+    setError(null);
 
     es.addEventListener('connected', (event) => {
       const data = JSON.parse(event.data);
@@ -54,15 +84,32 @@ export const EventSourceProvider: React.FC<EventSourceProviderProps> = ({ childr
       setError('Connection error');
       setIsConnected(false);
       es.close();
+      eventSourceRef.current = null;
       setEventSource(null);
     };
 
+    return es;
+  }, [listeners]);
+
+  // Initialize EventSource connection
+  useEffect(() => {
+    const es = createEventSource(backendUrl);
+    
     return () => {
-      es.close();
-      setEventSource(null);
-      setIsConnected(false);
+      if (es) {
+        es.close();
+        eventSourceRef.current = null;
+      }
     };
-  }, []); // Only run once on mount
+  }, [backendUrl, createEventSource]);
+
+  const setBackendUrl = useCallback((url: string) => {
+    setBackendUrlState(url);
+  }, []);
+
+  const reconnect = useCallback(() => {
+    createEventSource(backendUrl);
+  }, [backendUrl, createEventSource]);
 
   const subscribe = useCallback((events: EventType[], callback: (eventType: EventType, data: any) => void) => {
     // Add the callback to listeners for each event type
@@ -91,14 +138,17 @@ export const EventSourceProvider: React.FC<EventSourceProviderProps> = ({ childr
     };
   }, [listeners]);
 
-  const value = useMemo(() => ({
+  const contextValue = useMemo(() => ({
     subscribe,
     isConnected,
-    error
-  }), [subscribe, isConnected, error]);
+    error,
+    backendUrl,
+    setBackendUrl,
+    reconnect,
+  }), [subscribe, isConnected, error, backendUrl, setBackendUrl, reconnect]);
 
   return (
-    <EventSourceContext.Provider value={value}>
+    <EventSourceContext.Provider value={contextValue}>
       {children}
     </EventSourceContext.Provider>
   );
@@ -110,12 +160,32 @@ export const useEventSource = (events: EventType[], onEvent: (eventType: EventTy
     throw new Error('useEventSource must be used within an EventSourceProvider');
   }
 
+  // Use ref to store the latest callback to avoid infinite re-renders
+  const onEventRef = useRef(onEvent);
+  onEventRef.current = onEvent;
+
   useEffect(() => {
-    return context.subscribe(events, onEvent);
-  }, [events.join(','), onEvent]);
+    return context.subscribe(events, (eventType, data) => {
+      onEventRef.current(eventType, data);
+    });
+  }, [events.join(','), context.subscribe]);
 
   return {
     isConnected: context.isConnected,
-    error: context.error
+    error: context.error,
+  };
+};
+
+export const useBackendUrl = () => {
+  const context = useContext(EventSourceContext);
+  if (!context) {
+    throw new Error('useBackendUrl must be used within an EventSourceProvider');
+  }
+
+  return {
+    backendUrl: context.backendUrl,
+    setBackendUrl: context.setBackendUrl,
+    isConnected: context.isConnected,
+    reconnect: context.reconnect,
   };
 }; 

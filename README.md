@@ -131,8 +131,16 @@ The application consists of two parts:
 
 The frontend connects to the backend via Server-Sent Events (SSE) at `/api/updates`. 
 
+**Dynamic Backend URL:**
+- The frontend includes a backend URL input field in the header
+- Users can connect to any backend instance by entering the URL
+- Supports both local and remote backend instances
+- Shows connection status (connected/disconnected)
+- Defaults to `http://localhost:8080` in development
+
 **Development Setup:**
-- Frontend expects the backend to be available at `http://localhost:8080`
+- Uses `webpack.dev.js` configuration
+- Frontend expects the backend to be available at `http://localhost:8080` by default
 - When running the backend in Docker, the port mapping must expose port 8080 to match what the frontend expects:
 
 ```yaml
@@ -140,6 +148,18 @@ The frontend connects to the backend via Server-Sent Events (SSE) at `/api/updat
 ports:
   - "8080:8080"  # External:Internal - must match frontend expectation
 ```
+
+**Production Setup:**
+- Uses `webpack.prod.js` configuration
+- Frontend uses relative URLs (e.g., `/api/updates`) by default
+- Users can still connect to remote backends via the URL input
+- Build with: `yarn build` or `npm run build`
+
+**Usage:**
+1. Click the backend URL field in the header
+2. Enter the backend URL (e.g., `localhost:8080`, `api.yourdomain.com`, `192.168.1.100:8080`)
+3. Click "Connect" to establish the connection
+4. The connection status will show green (connected) or red (disconnected)
 
 ## Available Commands
 
