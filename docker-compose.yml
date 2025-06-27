@@ -6,7 +6,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "8080:8080"
     environment:
       - NODE_ENV=production
       - ASSET_HUB_URL=ws://host.docker.internal:63170

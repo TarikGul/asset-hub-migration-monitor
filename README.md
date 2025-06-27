@@ -127,6 +127,20 @@ The application consists of two parts:
 - Shows real-time block numbers for both chains
 - Updates automatically via SSE
 
+### Frontend-Backend Connection
+
+The frontend connects to the backend via Server-Sent Events (SSE) at `/api/updates`. 
+
+**Development Setup:**
+- Frontend expects the backend to be available at `http://localhost:8080`
+- When running the backend in Docker, the port mapping must expose port 8080 to match what the frontend expects:
+
+```yaml
+# docker-compose.yml
+ports:
+  - "8080:8080"  # External:Internal - must match frontend expectation
+```
+
 ## Available Commands
 
 - `just install` - Install dependencies for both frontend and backend
