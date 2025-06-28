@@ -142,10 +142,6 @@ const XcmMessageMetrics: React.FC = () => {
               <div className="queue-section-label">Current Depth</div>
             </div>
             <div className="queue-section-metric">
-              <div className="queue-section-value">0</div>
-              <div className="queue-section-label">Msg/min</div>
-            </div>
-            <div className="queue-section-metric">
               <div className="queue-section-value">{formatBytes(dmpQueueEvent?.totalSizeBytes || 0)}</div>
               <div className="queue-section-label">Total Size</div>
             </div>
