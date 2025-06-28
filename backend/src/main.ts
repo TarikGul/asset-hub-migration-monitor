@@ -201,6 +201,14 @@ signals.forEach((signal) => {
       });
       cleanupMigrationStage();
     }
+
+    if (cleanupAhMigrationStage) {
+      Log.service({
+        service: 'Application',
+        action: 'Cleaning up AH migration stage subscription'
+      });
+      cleanupAhMigrationStage();
+    }
     
     if (cleanupAhHeads) {
       Log.service({
