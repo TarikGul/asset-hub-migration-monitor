@@ -1,6 +1,6 @@
 import { db } from '../db';
-import { xcmMessageCounters, migrationStages, messageProcessingEventsAH } from '../db/schema';
-import { sql, eq } from 'drizzle-orm';
+import { xcmMessageCounters, migrationStages, messageProcessingEventsAH, dmpQueueEvents } from '../db/schema';
+import { sql, eq, desc } from 'drizzle-orm';
 
 import type { ITuple } from '@polkadot/types/types';
 import type { u32 } from '@polkadot/types';
@@ -11,6 +11,7 @@ import { ApiPromise, WsProvider } from '@polkadot/api';
 import type { Block } from '@polkadot/types/interfaces';
 import { VoidFn } from '@polkadot/api/types';
 import { getConfig } from '../config';
+import type { Vec } from '@polkadot/types';
 
 export const runAhHeadsService = async (): Promise<VoidFn> => {
   const provider = new WsProvider(getConfig().assetHubUrl);
@@ -163,7 +164,7 @@ async function updateXcmMessageCountersViaStorage(erroredOnAh: number) {
 export async function runAhXcmMessageCounterService() {
   const api = await AbstractApi.getInstance().getAssetHubApi();
 
-  const unsubscribeXcmMessages = await api.query.rcMigrator.dmpDataMessageCounts(async (messages: ITuple<[u32, u32]>) => {
+  const unsubscribeXcmMessages = await api.query.ahMigrator.dmpDataMessageCounts(async (messages: ITuple<[u32, u32]>) => {
     try {
       const [_, erroredOnAh] = messages;
       await updateXcmMessageCountersViaStorage(erroredOnAh.toNumber());
@@ -224,6 +225,25 @@ export async function runAhEventsService() {
           const header = await api.rpc.chain.getHeader();
           const blockNumber = header.number.toNumber();
           
+          // Before inserting to DB, calculate latency
+          const lastFillEvent = await db.query.dmpQueueEvents.findFirst({
+            where: eq(dmpQueueEvents.eventType, 'fill'),
+            orderBy: [desc(dmpQueueEvents.timestamp)]
+          });
+
+          let latencyMs = 0;
+          if (lastFillEvent && lastFillEvent.timestamp) {
+            const processingTimestamp = new Date();
+            latencyMs = processingTimestamp.getTime() - lastFillEvent.timestamp.getTime();
+          }
+
+          // Emit latency event
+          eventService.emit('dmpLatency', {
+            latencyMs,
+            blockNumber,
+            timestamp: new Date().toISOString(),
+          });
+
           // Save to database
           await db.insert(messageProcessingEventsAH).values({
             blockNumber,
@@ -234,7 +254,10 @@ export async function runAhEventsService() {
             chain: 'asset-hub',
             eventType: 'MessageQueue.Processed',
             blockNumber,
-            details: { eventData: event.toJSON() }
+            details: { 
+              eventData: event.toJSON(),
+              latencyMs 
+            }
           });
 
         } catch (error) {

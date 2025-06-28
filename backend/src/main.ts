@@ -7,7 +7,7 @@ import cors from 'cors';
 import { initializeDb } from './db/initializeDb';
 import { runRcHeadsService, runRcMigrationStageService, runRcXcmMessageCounterService, runRcBalancesService, runRcDmpDataMessageCountsService } from './services/rcService';
 import { eventService } from './services/eventService';
-import { runAhMigrationStageService, runAhHeadsService, runAhXcmMessageCounterService } from './services/ahService';
+import { runAhMigrationStageService, runAhHeadsService, runAhXcmMessageCounterService, runAhEventsService } from './services/ahService';
 import { Log } from './logging/Log';
 import { runRcFinalizedHeadsService } from './services/rcService';
 import { runAhFinalizedHeadsService } from './services/ahService';
@@ -47,6 +47,7 @@ app.get('/health', (_req: Request, res: Response) => {
 app.get('/api/updates', updatesHandler);
 
 let cleanupMigrationStage: VoidFn | null = null;
+let cleanupAhEvents: VoidFn | null = null;
 let cleanupHeads: VoidFn | null = null;
 let cleanupAhMigrationStage: VoidFn | null = null;
 let cleanupAhHeads: VoidFn | null = null;
@@ -137,6 +138,16 @@ runRcDmpDataMessageCountsService()
   })
   .catch(err => Log.service({
     service: 'RC DMP Data Message Counts',
+    action: 'Service start error',
+    error: err as Error
+  }));
+
+runAhEventsService()
+  .then((result) => {
+    cleanupAhEvents = result;
+  })
+  .catch(err => Log.service({
+    service: 'AH Events',
     action: 'Service start error',
     error: err as Error
   }));
@@ -272,6 +283,14 @@ signals.forEach((signal) => {
         action: 'Cleaning up RC DMP data message counts subscription'
       });
       cleanupRcDmpDataMessageCounts();
+    }
+    
+    if (cleanupAhEvents) {
+      Log.service({
+        service: 'Application',
+        action: 'Cleaning up AH events subscription'
+      });
+      cleanupAhEvents();
     }
 
     server.close(() => {
