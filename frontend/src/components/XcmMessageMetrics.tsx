@@ -158,18 +158,6 @@ const XcmMessageMetrics: React.FC = () => {
               <div className="queue-section-label">Avg Latency</div>
             </div>
           </div>
-          
-          <div className="queue-section-details">
-            <div className="queue-section-trend trend-down">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 4L12 20M12 20L18 14M12 20L6 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              Queue decreasing
-            </div>
-            <div className="queue-section-throughput">
-              <span className="throughput-speed speed-fast">Fast</span> • 0 msg/min
-            </div>
-          </div>
         </div>
         
         {/* UMP Queue Section */}
@@ -198,18 +186,6 @@ const XcmMessageMetrics: React.FC = () => {
             <div className="queue-section-metric">
               <div className="queue-section-value">0KB</div>
               <div className="queue-section-label">Avg Size</div>
-            </div>
-          </div>
-          
-          <div className="queue-section-details">
-            <div className="queue-section-trend trend-stable">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
-              Queue stable
-            </div>
-            <div className="queue-section-throughput">
-              <span className="throughput-speed speed-fast">Fast</span> • 0 msg/min
             </div>
           </div>
         </div>
