@@ -12,6 +12,10 @@ import type { Block } from '@polkadot/types/interfaces';
 import { VoidFn } from '@polkadot/api/types';
 import { getConfig } from '../config';
 import type { Vec } from '@polkadot/types';
+import { DmpMetricsCache } from './cache/Cache';
+
+// Get shared instance of DMP metrics cache
+const dmpMetricsCacheInstance = DmpMetricsCache.getInstance();
 
 export const runAhHeadsService = async (): Promise<VoidFn> => {
   const provider = new WsProvider(getConfig().assetHubUrl);
@@ -215,6 +219,7 @@ export async function runAhFinalizedHeadsService() {
 // This means we need to store and organize all the events locally, send them to some function to batch all the events to the db.
 export async function runAhEventsService() {
   const api = await AbstractApi.getInstance().getAssetHubApi();
+  let lastProcessedBlock = 0; // Track the last block we processed
 
   const unsubscribe = await api.query.system.events(async (events) => {
     for (const record of events) {
@@ -224,6 +229,12 @@ export async function runAhEventsService() {
           // Get current block information
           const header = await api.rpc.chain.getHeader();
           const blockNumber = header.number.toNumber();
+          
+          // Only process if this is a new block (avoid duplicate processing in same block)
+          if (blockNumber <= lastProcessedBlock) {
+            continue;
+          }
+          lastProcessedBlock = blockNumber;
           
           // Before inserting to DB, calculate latency
           const lastFillEvent = await db.query.dmpQueueEvents.findFirst({
@@ -237,9 +248,13 @@ export async function runAhEventsService() {
             latencyMs = processingTimestamp.getTime() - lastFillEvent.timestamp.getTime();
           }
 
-          // Emit latency event
+          // Update cache with new latency
+          dmpMetricsCacheInstance.updateAverageLatency(latencyMs);
+
+          // Emit latency event with both current and average
           eventService.emit('dmpLatency', {
             latencyMs,
+            averageLatencyMs: dmpMetricsCacheInstance.getAverageLatencyMs(),
             blockNumber,
             timestamp: new Date().toISOString(),
           });

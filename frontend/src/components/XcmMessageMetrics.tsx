@@ -12,16 +12,47 @@ interface XcmCounter {
   lastUpdated: string;
 }
 
+interface DmpLatency {
+  latencyMs: number;
+  averageLatencyMs: number;
+  blockNumber: number;
+  timestamp: string;
+}
+
+interface DmpQueueEvent {
+  queueSize: number;
+  totalSizeBytes: number;
+  eventType: string;
+  blockNumber: number;
+  timestamp: string;
+}
+
 const XcmMessageMetrics: React.FC = () => {
   const [rcCounter, setRcCounter] = useState<XcmCounter | null>(null);
   const [ahCounter, setAhCounter] = useState<XcmCounter | null>(null);
+  const [dmpLatency, setDmpLatency] = useState<DmpLatency | null>(null);
+  const [dmpQueueEvent, setDmpQueueEvent] = useState<DmpQueueEvent | null>(null);
 
   // Subscribe to RC and AH XCM message counter events
-  const { error } = useEventSource(['rcXcmMessageCounter', 'ahXcmMessageCounter'], useCallback((eventType: EventType, data: XcmCounter) => {
+  const { error: xcmError } = useEventSource(['rcXcmMessageCounter', 'ahXcmMessageCounter'], useCallback((eventType: EventType, data: XcmCounter) => {
     if (eventType === 'rcXcmMessageCounter') {
       setRcCounter(data);
     } else if (eventType === 'ahXcmMessageCounter') {
       setAhCounter(data);
+    }
+  }, []));
+
+  // Subscribe to DMP latency events
+  const { error: latencyError } = useEventSource(['dmpLatency'], useCallback((eventType: EventType, data: DmpLatency) => {
+    if (eventType === 'dmpLatency') {
+      setDmpLatency(data);
+    }
+  }, []));
+
+  // Subscribe to DMP queue events
+  const { error: queueError } = useEventSource(['dmpQueueEvent'], useCallback((eventType: EventType, data: DmpQueueEvent) => {
+    if (eventType === 'dmpQueueEvent') {
+      setDmpQueueEvent(data);
     }
   }, []));
 
@@ -40,6 +71,25 @@ const XcmMessageMetrics: React.FC = () => {
   };
 
   const inFlightStatus = getInFlightStatus();
+
+  // Format latency for display
+  const formatLatency = (latencyMs: number) => {
+    if (latencyMs === 0) return '0s';
+    return `${(latencyMs / 1000).toFixed(1)}s`;
+  };
+
+  // Get latency color based on value
+  const getLatencyColor = (latencyMs: number) => {
+    if (latencyMs < 5000) return 'var(--success)'; // < 5s = green
+    if (latencyMs < 15000) return 'var(--warning)'; // 5-15s = yellow
+    return 'var(--danger)'; // > 15s = red
+  };
+
+  // Format bytes for display
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return '0KB';
+    return `${(bytes / 1024).toFixed(1)}KB`;
+  };
 
   return (
     <section className="card xcm-messages">
@@ -88,7 +138,7 @@ const XcmMessageMetrics: React.FC = () => {
           
           <div className="queue-section-metrics">
             <div className="queue-section-metric">
-              <div className="queue-section-value">0</div>
+              <div className="queue-section-value">{dmpQueueEvent?.queueSize.toLocaleString() || 0}</div>
               <div className="queue-section-label">Current Depth</div>
             </div>
             <div className="queue-section-metric">
@@ -96,12 +146,20 @@ const XcmMessageMetrics: React.FC = () => {
               <div className="queue-section-label">Msg/min</div>
             </div>
             <div className="queue-section-metric">
-              <div className="queue-section-value">0s</div>
-              <div className="queue-section-label">Avg Processing</div>
+              <div className="queue-section-value">{formatBytes(dmpQueueEvent?.totalSizeBytes || 0)}</div>
+              <div className="queue-section-label">Total Size</div>
             </div>
             <div className="queue-section-metric">
-              <div className="queue-section-value">0KB</div>
-              <div className="queue-section-label">Avg Size</div>
+              <div className="queue-section-value" style={{ color: getLatencyColor(dmpLatency?.latencyMs || 0) }}>
+                {formatLatency(dmpLatency?.latencyMs || 0)}
+              </div>
+              <div className="queue-section-label">Current Latency</div>
+            </div>
+            <div className="queue-section-metric">
+              <div className="queue-section-value" style={{ color: getLatencyColor(dmpLatency?.averageLatencyMs || 0) }}>
+                {formatLatency(dmpLatency?.averageLatencyMs || 0)}
+              </div>
+              <div className="queue-section-label">Avg Latency</div>
             </div>
           </div>
           
