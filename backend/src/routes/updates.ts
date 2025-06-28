@@ -129,7 +129,12 @@ export const updatesHandler: RequestHandler = async (req: Request, res: Response
 
     // Handle errors
     req.on('error', (error) => {
-        logger.error('SSE connection error:', error);
+        // Check if this is a connection abort (normal when browser closes)
+        if (error.message === 'aborted' || (error as any).code === 'ECONNRESET') {
+            logger.info('SSE connection aborted (client disconnected)');
+        } else {
+            logger.error('SSE connection error:', error);
+        }
         // Clean up all event listeners
         for (const [eventType, handler] of eventHandlers.entries()) {
             eventService.off(eventType, handler);
