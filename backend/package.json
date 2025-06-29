@@ -10,7 +10,9 @@
     "push": "drizzle-kit push:sqlite",
     "build:scripts": "rimraf ./build-scripts && tsc -p tsconfig.scripts.json",
     "test:services": "yarn build:scripts && node ./build-scripts/scripts/testServices.js",
-    "test:xcmProcessing": "yarn build:scripts && node ./build-scripts/scripts/testBlock.js"
+    "test:xcmProcessing": "yarn build:scripts && node ./build-scripts/scripts/testBlock.js",
+    "lint": "eslint src --ext .ts --fix",
+    "format": "prettier --write \"src/**/*.{ts,js,json}\""
   },
   "keywords": [],
   "author": "",
@@ -32,7 +34,11 @@
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.9",
     "@types/node": "^20.11.24",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
     "drizzle-kit": "^0.20.14",
+    "eslint": "^8.57.0",
+    "prettier": "^3.2.5",
     "rimraf": "^6.0.1",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",

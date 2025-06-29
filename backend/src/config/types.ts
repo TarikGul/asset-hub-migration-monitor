@@ -3,4 +3,4 @@ export interface Config {
   relayChainUrl: string;
   port: number;
   logLevel: string;
-} 
+}

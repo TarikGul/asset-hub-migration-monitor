@@ -3,7 +3,7 @@ export class DmpMetricsCache {
   private averageLatencyMs: number = 0;
   private totalSizeBytes: number = 0;
   private lastUpdated: Date = new Date();
-  
+
   // Track counters and running sums for averaging
   private latencyCount: number = 0;
   private latencySum: number = 0;
@@ -37,7 +37,7 @@ export class DmpMetricsCache {
   updateAverageLatency(newLatencyMs: number): void {
     this.latencySum += newLatencyMs;
     this.latencyCount++;
-    
+
     // Calculate new average
     this.averageLatencyMs = this.latencySum / this.latencyCount;
     this.lastUpdated = new Date();
@@ -47,7 +47,7 @@ export class DmpMetricsCache {
   updateTotalSize(newTotalSizeBytes: number): void {
     this.sizeSum += newTotalSizeBytes;
     this.sizeCount++;
-    
+
     // Calculate new average
     this.totalSizeBytes = this.sizeSum / this.sizeCount;
     this.lastUpdated = new Date();
@@ -63,4 +63,4 @@ export class DmpMetricsCache {
       sizeCount: this.sizeCount,
     };
   }
-} 
+}

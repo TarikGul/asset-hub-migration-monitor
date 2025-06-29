@@ -6,40 +6,40 @@ import { TransformableInfo } from 'logform';
  * to have more specific type info.
  */
 export interface ITransformableInfo extends TransformableInfo {
-	message: string;
+  message: string;
 }
 
 export type ISanitizedData = {
-	[key: string]: unknown;
+  [key: string]: unknown;
 };
 
 // Standardized log message structures
 export interface ServiceLogData {
-	service: string;
-	action: string;
-	details?: Record<string, unknown>;
-	error?: Error;
+  service: string;
+  action: string;
+  details?: Record<string, unknown>;
+  error?: Error;
 }
 
 export interface ChainEventLogData {
-	chain: 'relay-chain' | 'asset-hub';
-	eventType: string;
-	blockNumber?: number;
-	blockHash?: string;
-	details?: Record<string, unknown>;
-	error?: Error;
+  chain: 'relay-chain' | 'asset-hub';
+  eventType: string;
+  blockNumber?: number;
+  blockHash?: string;
+  details?: Record<string, unknown>;
+  error?: Error;
 }
 
 export interface DatabaseLogData {
-	operation: 'insert' | 'update' | 'query' | 'delete';
-	table: string;
-	details?: Record<string, unknown>;
-	error?: Error;
+  operation: 'insert' | 'update' | 'query' | 'delete';
+  table: string;
+  details?: Record<string, unknown>;
+  error?: Error;
 }
 
 export interface ConnectionLogData {
-	service: string;
-	status: 'connected' | 'disconnected' | 'error';
-	details?: Record<string, unknown>;
-	error?: Error;
+  service: string;
+  status: 'connected' | 'disconnected' | 'error';
+  details?: Record<string, unknown>;
+  error?: Error;
 }

@@ -1,5 +1,11 @@
 import { db } from '../db';
-import { xcmMessageCounters, migrationStages, messageProcessingEventsAH, dmpQueueEvents, umpQueueEvents } from '../db/schema';
+import {
+  xcmMessageCounters,
+  migrationStages,
+  messageProcessingEventsAH,
+  dmpQueueEvents,
+  umpQueueEvents,
+} from '../db/schema';
 import { sql, eq, desc } from 'drizzle-orm';
 
 import type { ITuple } from '@polkadot/types/types';
@@ -22,10 +28,10 @@ export const runAhHeadsService = async (): Promise<VoidFn> => {
   const api = await ApiPromise.create({ provider });
   Log.connection({
     service: 'Asset Hub Heads',
-    status: 'connected'
+    status: 'connected',
   });
 
-  const unsubscribe = await api.rpc.chain.subscribeFinalizedHeads((header) => {
+  const unsubscribe = await api.rpc.chain.subscribeFinalizedHeads(header => {
     const blockNumber = header.number.toNumber();
     const blockHash = header.hash.toString();
 
@@ -34,14 +40,14 @@ export const runAhHeadsService = async (): Promise<VoidFn> => {
       eventType: 'finalized head',
       blockNumber,
       blockHash,
-      details: { timestamp: new Date().toISOString() }
+      details: { timestamp: new Date().toISOString() },
     });
 
     // Emit the head event through eventService
     eventService.emit('ahHead', {
       blockNumber,
       blockHash,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   });
 
@@ -50,43 +56,45 @@ export const runAhHeadsService = async (): Promise<VoidFn> => {
 
 export async function runAhMigrationStageService() {
   const api = await AbstractApi.getInstance().getAssetHubApi();
-  
-  const unsubscribeMigrationStage = await api.query.ahMigrator.ahMigrationStage(async (migrationStage: any) => {
-    try {
-      const header = await api.rpc.chain.getHeader();
-      
-      await db.insert(migrationStages).values({
-        chain: 'asset-hub',
-        stage: migrationStage.type,
-        details: JSON.stringify(migrationStage.toJSON()),
-        blockNumber: header.number.toNumber(),
-        blockHash: header.hash.toHex(),
-      });
 
-      eventService.emit('ahStageUpdate', {
-        chain: 'asset-hub',
-        stage: migrationStage.type,
-        details: migrationStage.toJSON(),
-        blockNumber: header.number.toNumber(),
-        blockHash: header.hash.toHex(),
-        timestamp: new Date().toISOString(),
-      });
+  const unsubscribeMigrationStage = (await api.query.ahMigrator.ahMigrationStage(
+    async (migrationStage: any) => {
+      try {
+        const header = await api.rpc.chain.getHeader();
 
-      Log.chainEvent({
-        chain: 'asset-hub',
-        eventType: 'migration stage update',
-        blockNumber: header.number.toNumber(),
-        blockHash: header.hash.toHex(),
-        details: { stage: migrationStage.type }
-      });
-    } catch (error) {
-      Log.chainEvent({
-        chain: 'asset-hub',
-        eventType: 'migration stage processing error',
-        error: error as Error
-      });
+        await db.insert(migrationStages).values({
+          chain: 'asset-hub',
+          stage: migrationStage.type,
+          details: JSON.stringify(migrationStage.toJSON()),
+          blockNumber: header.number.toNumber(),
+          blockHash: header.hash.toHex(),
+        });
+
+        eventService.emit('ahStageUpdate', {
+          chain: 'asset-hub',
+          stage: migrationStage.type,
+          details: migrationStage.toJSON(),
+          blockNumber: header.number.toNumber(),
+          blockHash: header.hash.toHex(),
+          timestamp: new Date().toISOString(),
+        });
+
+        Log.chainEvent({
+          chain: 'asset-hub',
+          eventType: 'migration stage update',
+          blockNumber: header.number.toNumber(),
+          blockHash: header.hash.toHex(),
+          details: { stage: migrationStage.type },
+        });
+      } catch (error) {
+        Log.chainEvent({
+          chain: 'asset-hub',
+          eventType: 'migration stage processing error',
+          error: error as Error,
+        });
+      }
     }
-  }) as unknown as VoidFn;
+  )) as unknown as VoidFn;
 
   return unsubscribeMigrationStage;
 }
@@ -98,7 +106,7 @@ export async function findXcmMessages(api: ApiPromise, block: Block) {
 
   const apiAt = await api.at(block.hash);
   const events = await apiAt.query.system.events();
-  
+
   for (const record of events) {
     const { event } = record;
     if (event.section === 'parachainSystem' && event.method === 'UpwardMessageSent') {
@@ -121,7 +129,8 @@ export async function findXcmMessages(api: ApiPromise, block: Block) {
 
 async function updateXcmMessageCountersViaStorage(erroredOnAh: number) {
   try {
-    await db.update(xcmMessageCounters)
+    await db
+      .update(xcmMessageCounters)
       .set({
         messagesFailed: erroredOnAh,
         lastUpdated: new Date(),
@@ -146,21 +155,21 @@ async function updateXcmMessageCountersViaStorage(erroredOnAh: number) {
       Log.service({
         service: 'XCM Message Counter',
         action: 'Emitting ahXcmMessageCounter event via storage',
-        details: eventData
+        details: eventData,
       });
       eventService.emit('ahXcmMessageCounter', eventData);
     } else {
       Log.service({
         service: 'XCM Message Counter',
         action: 'No counter found after storage update',
-        details: { sourceChain: 'asset-hub' }
+        details: { sourceChain: 'asset-hub' },
       });
     }
   } catch (error) {
     Log.service({
       service: 'XCM Message Counter',
       action: 'Error updating counters via storage',
-      error: error as Error
+      error: error as Error,
     });
   }
 }
@@ -168,18 +177,20 @@ async function updateXcmMessageCountersViaStorage(erroredOnAh: number) {
 export async function runAhXcmMessageCounterService() {
   const api = await AbstractApi.getInstance().getAssetHubApi();
 
-  const unsubscribeXcmMessages = await api.query.ahMigrator.dmpDataMessageCounts(async (messages: ITuple<[u32, u32]>) => {
-    try {
-      const [_, erroredOnAh] = messages;
-      await updateXcmMessageCountersViaStorage(erroredOnAh.toNumber());
-    } catch (error) {
-      Log.chainEvent({
-        chain: 'asset-hub',
-        eventType: 'XCM message processing error',
-        error: error as Error
-      });
+  const unsubscribeXcmMessages = (await api.query.ahMigrator.dmpDataMessageCounts(
+    async (messages: ITuple<[u32, u32]>) => {
+      try {
+        const [_, erroredOnAh] = messages;
+        await updateXcmMessageCountersViaStorage(erroredOnAh.toNumber());
+      } catch (error) {
+        Log.chainEvent({
+          chain: 'asset-hub',
+          eventType: 'XCM message processing error',
+          error: error as Error,
+        });
+      }
     }
-  }) as unknown as VoidFn;
+  )) as unknown as VoidFn;
 
   return unsubscribeXcmMessages;
 }
@@ -189,10 +200,10 @@ export async function runAhFinalizedHeadsService() {
   const api = await ApiPromise.create({ provider });
   Log.connection({
     service: 'Asset Hub Finalized Heads',
-    status: 'connected'
+    status: 'connected',
   });
 
-  const unsubscribe = await api.rpc.chain.subscribeFinalizedHeads((header) => {
+  const unsubscribe = await api.rpc.chain.subscribeFinalizedHeads(header => {
     const blockNumber = header.number.toNumber();
     const blockHash = header.hash.toString();
 
@@ -201,14 +212,14 @@ export async function runAhFinalizedHeadsService() {
       eventType: 'finalized head',
       blockNumber,
       blockHash,
-      details: { timestamp: new Date().toISOString() }
+      details: { timestamp: new Date().toISOString() },
     });
 
     // Emit the head event through eventService
     eventService.emit('ahHead', {
       blockNumber,
       blockHash,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   });
 
@@ -221,7 +232,7 @@ export async function runAhEventsService() {
   const api = await AbstractApi.getInstance().getAssetHubApi();
   let lastProcessedBlock = 0; // Track the last block we processed
 
-  const unsubscribe = await api.query.system.events(async (events) => {
+  const unsubscribe = await api.query.system.events(async events => {
     for (const record of events) {
       const { event } = record;
       if (event.section === 'messageQueue' && event.method === 'Processed') {
@@ -229,17 +240,17 @@ export async function runAhEventsService() {
           // Get current block information
           const header = await api.rpc.chain.getHeader();
           const blockNumber = header.number.toNumber();
-          
+
           // Only process if this is a new block (avoid duplicate processing in same block)
           if (blockNumber <= lastProcessedBlock) {
             continue;
           }
           lastProcessedBlock = blockNumber;
-          
+
           // Before inserting to DB, calculate latency
           const lastFillEvent = await db.query.dmpQueueEvents.findFirst({
             where: eq(dmpQueueEvents.eventType, 'fill'),
-            orderBy: [desc(dmpQueueEvents.timestamp)]
+            orderBy: [desc(dmpQueueEvents.timestamp)],
           });
 
           let latencyMs = 0;
@@ -269,22 +280,21 @@ export async function runAhEventsService() {
             chain: 'asset-hub',
             eventType: 'MessageQueue.Processed',
             blockNumber,
-            details: { 
+            details: {
               eventData: event.toJSON(),
-              latencyMs 
-            }
+              latencyMs,
+            },
           });
-
         } catch (error) {
           Log.chainEvent({
             chain: 'asset-hub',
             eventType: 'MessageQueue.Processed database error',
-            error: error as Error
+            error: error as Error,
           });
         }
       }
     }
-  })
+  });
 
   return unsubscribe;
 }
@@ -292,37 +302,39 @@ export async function runAhEventsService() {
 export async function runAhUmpPendingMessagesService() {
   const api = await AbstractApi.getInstance().getAssetHubApi();
 
-  const unsubscribe = await api.query.parachainSystem.pendingUpwardMessages(async (messages: Vec<Bytes>) => {
-    try {
-      let totalSizeBytes = 0;
-      for (const message of messages) {
-        const messageSize = message.length;
-        totalSizeBytes += messageSize;
+  const unsubscribe = (await api.query.parachainSystem.pendingUpwardMessages(
+    async (messages: Vec<Bytes>) => {
+      try {
+        let totalSizeBytes = 0;
+        for (const message of messages) {
+          const messageSize = message.length;
+          totalSizeBytes += messageSize;
+        }
+
+        const header = await api.rpc.chain.getHeader();
+        const blockNumber = header.number.toNumber();
+
+        await db.insert(umpQueueEvents).values({
+          queueSize: messages.length,
+          totalSizeBytes,
+          blockNumber,
+          timestamp: new Date(),
+        });
+
+        Log.service({
+          service: 'Asset Hub UMP',
+          action: 'UMP queue event recorded',
+          details: { queueSize: messages.length, totalSizeBytes, blockNumber },
+        });
+      } catch (error) {
+        Log.service({
+          service: 'Asset Hub UMP',
+          action: 'Error processing UMP pending messages',
+          error: error as Error,
+        });
       }
-
-      const header = await api.rpc.chain.getHeader();
-      const blockNumber = header.number.toNumber();
-
-      await db.insert(umpQueueEvents).values({
-        queueSize: messages.length,
-        totalSizeBytes,
-        blockNumber,
-        timestamp: new Date(),
-      });
-
-      Log.service({
-        service: 'Asset Hub UMP',
-        action: 'UMP queue event recorded',
-        details: { queueSize: messages.length, totalSizeBytes, blockNumber }
-      });
-    } catch (error) {
-      Log.service({
-        service: 'Asset Hub UMP',
-        action: 'Error processing UMP pending messages',
-        error: error as Error
-      });
     }
-  }) as unknown as VoidFn;
+  )) as unknown as VoidFn;
 
   return unsubscribe;
 }

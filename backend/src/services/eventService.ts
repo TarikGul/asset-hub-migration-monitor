@@ -16,4 +16,4 @@ class EventService extends EventEmitter {
   }
 }
 
-export const eventService = EventService.getInstance(); 
+export const eventService = EventService.getInstance();

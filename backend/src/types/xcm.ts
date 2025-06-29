@@ -46,10 +46,13 @@ export interface ISanitizedParachainInherentData {
     msg: string;
     sentAt: number;
   }>;
-  horizontalMessages: Map<number, Array<{
-    data: string;
-    sentAt: number;
-  }>>;
+  horizontalMessages: Map<
+    number,
+    Array<{
+      data: string;
+      sentAt: number;
+    }>
+  >;
   [key: string]: any;
 }
 
@@ -114,4 +117,4 @@ export interface IExtrinsic {
     data?: ISanitizedParentInherentData | ISanitizedParachainInherentData;
     [key: string]: any;
   };
-} 
+}

@@ -23,7 +23,9 @@ export const xcmMessageCounters = sqliteTable('xcm_message_counters', {
   messagesSent: integer('messages_sent').notNull().default(0),
   messagesProcessed: integer('messages_processed').notNull().default(0),
   messagesFailed: integer('messages_failed').notNull().default(0),
-  lastUpdated: integer('last_updated', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+  lastUpdated: integer('last_updated', { mode: 'timestamp' })
+    .notNull()
+    .$defaultFn(() => new Date()),
 });
 
 // Balance Migration Counters
@@ -33,7 +35,9 @@ export const balanceMigrationCounters = sqliteTable('balance_migration_counters'
   totalBalanceMigrated: integer('total_balance_migrated').notNull().default(0),
   totalBalanceKept: integer('total_balance_kept').notNull().default(0),
   failedMigrations: integer('failed_migrations').notNull().default(0),
-  lastUpdated: integer('last_updated', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+  lastUpdated: integer('last_updated', { mode: 'timestamp' })
+    .notNull()
+    .$defaultFn(() => new Date()),
 });
 
 // Teleportation Counters
@@ -44,18 +48,24 @@ export const teleportationCounters = sqliteTable('teleportation_counters', {
   totalMintAmount: integer('total_mint_amount').notNull().default(0),
   totalBurnAmount: integer('total_burn_amount').notNull().default(0),
   failedOperations: integer('failed_operations').notNull().default(0),
-  lastUpdated: integer('last_updated', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+  lastUpdated: integer('last_updated', { mode: 'timestamp' })
+    .notNull()
+    .$defaultFn(() => new Date()),
 });
 
 // Pallet Migration Counters
 export const palletMigrationCounters = sqliteTable('pallet_migration_counters', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   palletName: text('pallet_name').notNull(),
-  stageId: integer('stage_id').notNull().references(() => migrationStages.id),
+  stageId: integer('stage_id')
+    .notNull()
+    .references(() => migrationStages.id),
   itemsProcessed: integer('items_processed').notNull().default(0),
   totalItems: integer('total_items').notNull().default(0),
   failedItems: integer('failed_items').notNull().default(0),
-  lastUpdated: integer('last_updated', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+  lastUpdated: integer('last_updated', { mode: 'timestamp' })
+    .notNull()
+    .$defaultFn(() => new Date()),
 });
 
 // DMP Queue State Changes
@@ -94,8 +104,12 @@ export const messageProcessingEventsAH = sqliteTable('message_processing_events'
 // Queue-Processing Correlation
 export const queueProcessingCorrelation = sqliteTable('queue_processing_correlation', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  queueEventId: integer('queue_event_id').notNull().references(() => dmpQueueEvents.id),
-  processingEventId: integer('processing_event_id').notNull().references(() => messageProcessingEventsAH.id),
+  queueEventId: integer('queue_event_id')
+    .notNull()
+    .references(() => dmpQueueEvents.id),
+  processingEventId: integer('processing_event_id')
+    .notNull()
+    .references(() => messageProcessingEventsAH.id),
   latencyMs: integer('latency_ms').notNull(), // Time between queue drain and processing
   throughput: integer('throughput').notNull(), // Messages per second
   throughputBytes: integer('throughput_bytes').notNull(), // Bytes per second
@@ -110,7 +124,9 @@ export const dmpMetricsCache = sqliteTable('dmp_metrics_cache', {
   averageLatencyMs: integer('average_latency_ms').notNull().default(0),
   averageThroughput: integer('average_throughput').notNull().default(0),
   averageThroughputBytes: integer('average_throughput_bytes').notNull().default(0),
-  lastUpdated: integer('last_updated', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+  lastUpdated: integer('last_updated', { mode: 'timestamp' })
+    .notNull()
+    .$defaultFn(() => new Date()),
 });
 
 export type DmpQueueEvent = typeof dmpQueueEvents.$inferSelect;

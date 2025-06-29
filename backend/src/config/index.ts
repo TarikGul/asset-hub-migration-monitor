@@ -23,7 +23,7 @@ const loadConfig = (): Config => {
     assetHubUrl,
     relayChainUrl,
     port: typeof port === 'string' ? parseInt(port, 10) : port,
-    logLevel
+    logLevel,
   };
 };
 
@@ -32,4 +32,4 @@ export const getConfig = (): Config => {
     cachedConfig = loadConfig();
   }
   return cachedConfig;
-}; 
+};

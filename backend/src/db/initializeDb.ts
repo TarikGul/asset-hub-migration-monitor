@@ -9,7 +9,7 @@ export async function initializeDb() {
     Log.service({
       service: 'Database Initialization',
       action: 'Found existing counters',
-      details: { count: existingCounters.length }
+      details: { count: existingCounters.length },
     });
 
     // Initialize RC counter if it doesn't exist
@@ -17,7 +17,7 @@ export async function initializeDb() {
       Log.service({
         service: 'Database Initialization',
         action: 'Initializing XCM message counter',
-        details: { chain: 'relay-chain', destination: 'asset-hub' }
+        details: { chain: 'relay-chain', destination: 'asset-hub' },
       });
       await db.insert(xcmMessageCounters).values({
         sourceChain: 'relay-chain',
@@ -34,7 +34,7 @@ export async function initializeDb() {
       Log.service({
         service: 'Database Initialization',
         action: 'Initializing XCM message counter',
-        details: { chain: 'asset-hub', destination: 'relay-chain' }
+        details: { chain: 'asset-hub', destination: 'relay-chain' },
       });
       await db.insert(xcmMessageCounters).values({
         sourceChain: 'asset-hub',
@@ -51,7 +51,7 @@ export async function initializeDb() {
     if (!existingDmpCache) {
       Log.service({
         service: 'Database Initialization',
-        action: 'Initializing DMP metrics cache'
+        action: 'Initializing DMP metrics cache',
       });
       await db.insert(dmpMetricsCache).values({
         currentQueueSize: 0,
@@ -65,14 +65,14 @@ export async function initializeDb() {
 
     Log.service({
       service: 'Database Initialization',
-      action: 'Database initialization completed successfully'
+      action: 'Database initialization completed successfully',
     });
   } catch (error) {
     Log.service({
       service: 'Database Initialization',
       action: 'Database initialization error',
-      error: error as Error
+      error: error as Error,
     });
     throw error;
   }
-} 
+}

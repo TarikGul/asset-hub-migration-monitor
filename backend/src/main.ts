@@ -5,9 +5,21 @@ import type { VoidFn } from '@polkadot/api/types';
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { initializeDb } from './db/initializeDb';
-import { runRcHeadsService, runRcMigrationStageService, runRcXcmMessageCounterService, runRcBalancesService, runRcDmpDataMessageCountsService } from './services/rcService';
+import {
+  runRcHeadsService,
+  runRcMigrationStageService,
+  runRcXcmMessageCounterService,
+  runRcBalancesService,
+  runRcDmpDataMessageCountsService,
+} from './services/rcService';
 import { eventService } from './services/eventService';
-import { runAhMigrationStageService, runAhHeadsService, runAhXcmMessageCounterService, runAhEventsService, runAhUmpPendingMessagesService } from './services/ahService';
+import {
+  runAhMigrationStageService,
+  runAhHeadsService,
+  runAhXcmMessageCounterService,
+  runAhEventsService,
+  runAhUmpPendingMessagesService,
+} from './services/ahService';
 import { Log } from './logging/Log';
 import { runRcFinalizedHeadsService } from './services/rcService';
 import { runAhFinalizedHeadsService } from './services/ahService';
@@ -24,14 +36,14 @@ initializeDb()
   .then(() => {
     Log.service({
       service: 'Database',
-      action: 'Initialized successfully'
+      action: 'Initialized successfully',
     });
   })
-  .catch((err) => {
+  .catch(err => {
     Log.service({
       service: 'Database',
       action: 'Initialization error',
-      error: err as Error
+      error: err as Error,
     });
   });
 
@@ -61,127 +73,147 @@ let cleanupAhUmpPendingMessages: VoidFn | null = null;
 
 // Start the RC finalized heads service
 runRcFinalizedHeadsService()
-  .then((result) => {
+  .then(result => {
     cleanupRcFinalizedHeads = result;
   })
-  .catch(err => Log.service({
-    service: 'RC Finalized Heads',
-    action: 'Service start error',
-    error: err as Error
-  }));
+  .catch(err =>
+    Log.service({
+      service: 'RC Finalized Heads',
+      action: 'Service start error',
+      error: err as Error,
+    })
+  );
 
 runAhMigrationStageService()
-  .then((result) => {
+  .then(result => {
     cleanupAhMigrationStage = result;
   })
-  .catch(err => Log.service({
-    service: 'AH Migration Stage',
-    action: 'Service start error',
-    error: err as Error
-  }));
+  .catch(err =>
+    Log.service({
+      service: 'AH Migration Stage',
+      action: 'Service start error',
+      error: err as Error,
+    })
+  );
 
 // Start the migration stage service
 runRcMigrationStageService()
-  .then((result) => {
+  .then(result => {
     cleanupMigrationStage = result;
   })
-  .catch(err => Log.service({
-    service: 'RC Migration Stage',
-    action: 'Service start error',
-    error: err as Error
-  }));
+  .catch(err =>
+    Log.service({
+      service: 'RC Migration Stage',
+      action: 'Service start error',
+      error: err as Error,
+    })
+  );
 
 runRcXcmMessageCounterService()
-  .then((result) => {
+  .then(result => {
     cleanupRcXcmMessageCounter = result;
   })
-  .catch(err => Log.service({
-    service: 'RC XCM Message Counter',
-    action: 'Service start error',
-    error: err as Error
-  }));
+  .catch(err =>
+    Log.service({
+      service: 'RC XCM Message Counter',
+      action: 'Service start error',
+      error: err as Error,
+    })
+  );
 
 runAhXcmMessageCounterService()
-  .then((result) => {
+  .then(result => {
     cleanupAhXcmMessageCounter = result;
   })
-  .catch(err => Log.service({
-    service: 'AH XCM Message Counter',
-    action: 'Service start error',
-    error: err as Error
-  }));
+  .catch(err =>
+    Log.service({
+      service: 'AH XCM Message Counter',
+      action: 'Service start error',
+      error: err as Error,
+    })
+  );
 
 // Start the AH finalized heads service
 runAhFinalizedHeadsService()
-  .then((result) => {
+  .then(result => {
     cleanupAhFinalizedHeads = result;
   })
-  .catch(err => Log.service({
-    service: 'AH Finalized Heads',
-    action: 'Service start error',
-    error: err as Error
-  }));
+  .catch(err =>
+    Log.service({
+      service: 'AH Finalized Heads',
+      action: 'Service start error',
+      error: err as Error,
+    })
+  );
 
 // Start the RC balances service
 runRcBalancesService()
-  .then((result) => {
+  .then(result => {
     cleanupRcBalances = result;
   })
-  .catch(err => Log.service({
-    service: 'RC Balances',
-    action: 'Service start error',
-    error: err as Error
-  }));
+  .catch(err =>
+    Log.service({
+      service: 'RC Balances',
+      action: 'Service start error',
+      error: err as Error,
+    })
+  );
 
 runRcDmpDataMessageCountsService()
-  .then((result) => {
+  .then(result => {
     cleanupRcDmpDataMessageCounts = result;
   })
-  .catch(err => Log.service({
-    service: 'RC DMP Data Message Counts',
-    action: 'Service start error',
-    error: err as Error
-  }));
+  .catch(err =>
+    Log.service({
+      service: 'RC DMP Data Message Counts',
+      action: 'Service start error',
+      error: err as Error,
+    })
+  );
 
 runAhEventsService()
-  .then((result) => {
+  .then(result => {
     cleanupAhEvents = result;
   })
-  .catch(err => Log.service({
-    service: 'AH Events',
-    action: 'Service start error',
-    error: err as Error
-  }));
+  .catch(err =>
+    Log.service({
+      service: 'AH Events',
+      action: 'Service start error',
+      error: err as Error,
+    })
+  );
 
 runAhUmpPendingMessagesService()
-  .then((result) => {
+  .then(result => {
     cleanupAhUmpPendingMessages = result;
   })
-  .catch(err => Log.service({
-    service: 'AH UMP Pending Messages',
-    action: 'Service start error',
-    error: err as Error
-  }));
+  .catch(err =>
+    Log.service({
+      service: 'AH UMP Pending Messages',
+      action: 'Service start error',
+      error: err as Error,
+    })
+  );
 
 // Listen for the migrationScheduled event
-eventService.on('migrationScheduled', async (data) => {
+eventService.on('migrationScheduled', async data => {
   Log.service({
     service: 'Migration Scheduler',
     action: 'Migration scheduled event received',
-    details: data
+    details: data,
   });
-  
+
   if (DISABLE_HEADS_SERVICE) {
     Log.service({
       service: 'Migration Scheduler',
-      action: 'Heads service disabled, skipping'
+      action: 'Heads service disabled, skipping',
     });
   } else {
     // Clean up existing heads subscription if it exists
     if (cleanupHeads) {
       Log.service({
         service: 'Migration Scheduler',
-        action: 'Cleaning up existing heads subscription'
+        action: 'Cleaning up existing heads subscription',
       });
       cleanupHeads();
       cleanupHeads = null;
@@ -194,13 +226,13 @@ eventService.on('migrationScheduled', async (data) => {
       Log.service({
         service: 'Migration Scheduler',
         action: 'Started monitoring heads for scheduled block',
-        details: { scheduledBlockNumber: data.scheduledBlockNumber }
+        details: { scheduledBlockNumber: data.scheduledBlockNumber },
       });
     } catch (error) {
       Log.service({
         service: 'Migration Scheduler',
         action: 'Error starting heads service',
-        error: error as Error
+        error: error as Error,
       });
     }
   }
@@ -208,18 +240,18 @@ eventService.on('migrationScheduled', async (data) => {
 
 // Handle termination signals
 const signals = ['SIGINT', 'SIGTERM', 'SIGQUIT'] as const;
-signals.forEach((signal) => {
+signals.forEach(signal => {
   process.on(signal, async () => {
     Log.service({
       service: 'Application',
       action: 'Received termination signal, starting graceful shutdown',
-      details: { signal }
+      details: { signal },
     });
 
     if (cleanupMigrationStage) {
       Log.service({
         service: 'Application',
-        action: 'Cleaning up migration stage subscription'
+        action: 'Cleaning up migration stage subscription',
       });
       cleanupMigrationStage();
     }
@@ -227,15 +259,15 @@ signals.forEach((signal) => {
     if (cleanupAhMigrationStage) {
       Log.service({
         service: 'Application',
-        action: 'Cleaning up AH migration stage subscription'
+        action: 'Cleaning up AH migration stage subscription',
       });
       cleanupAhMigrationStage();
     }
-    
+
     if (cleanupAhHeads) {
       Log.service({
         service: 'Application',
-        action: 'Cleaning up AH heads subscription'
+        action: 'Cleaning up AH heads subscription',
       });
       cleanupAhHeads();
     }
@@ -243,7 +275,7 @@ signals.forEach((signal) => {
     if (cleanupRcXcmMessageCounter) {
       Log.service({
         service: 'Application',
-        action: 'Cleaning up RC XCM message counter subscription'
+        action: 'Cleaning up RC XCM message counter subscription',
       });
       cleanupRcXcmMessageCounter();
     }
@@ -251,7 +283,7 @@ signals.forEach((signal) => {
     if (cleanupAhXcmMessageCounter) {
       Log.service({
         service: 'Application',
-        action: 'Cleaning up AH XCM message counter subscription'
+        action: 'Cleaning up AH XCM message counter subscription',
       });
       cleanupAhXcmMessageCounter();
     }
@@ -259,15 +291,15 @@ signals.forEach((signal) => {
     if (cleanupHeads) {
       Log.service({
         service: 'Application',
-        action: 'Cleaning up heads subscription'
+        action: 'Cleaning up heads subscription',
       });
       cleanupHeads();
-    } 
+    }
 
     if (cleanupAhFinalizedHeads) {
       Log.service({
         service: 'Application',
-        action: 'Cleaning up AH finalized heads subscription'
+        action: 'Cleaning up AH finalized heads subscription',
       });
       cleanupAhFinalizedHeads();
     }
@@ -275,7 +307,7 @@ signals.forEach((signal) => {
     if (cleanupRcFinalizedHeads) {
       Log.service({
         service: 'Application',
-        action: 'Cleaning up RC finalized heads subscription'
+        action: 'Cleaning up RC finalized heads subscription',
       });
       cleanupRcFinalizedHeads();
     }
@@ -283,7 +315,7 @@ signals.forEach((signal) => {
     if (cleanupRcBalances) {
       Log.service({
         service: 'Application',
-        action: 'Cleaning up RC balances subscription'
+        action: 'Cleaning up RC balances subscription',
       });
       cleanupRcBalances();
     }
@@ -291,15 +323,15 @@ signals.forEach((signal) => {
     if (cleanupRcDmpDataMessageCounts) {
       Log.service({
         service: 'Application',
-        action: 'Cleaning up RC DMP data message counts subscription'
+        action: 'Cleaning up RC DMP data message counts subscription',
       });
       cleanupRcDmpDataMessageCounts();
     }
-    
+
     if (cleanupAhEvents) {
       Log.service({
         service: 'Application',
-        action: 'Cleaning up AH events subscription'
+        action: 'Cleaning up AH events subscription',
       });
       cleanupAhEvents();
     }
@@ -307,7 +339,7 @@ signals.forEach((signal) => {
     server.close(() => {
       Log.service({
         service: 'Application',
-        action: 'Server closed, exiting'
+        action: 'Server closed, exiting',
       });
       process.exit(0);
     });
@@ -316,7 +348,7 @@ signals.forEach((signal) => {
     setTimeout(() => {
       Log.service({
         service: 'Application',
-        action: 'Forced exit after timeout'
+        action: 'Forced exit after timeout',
       });
       process.exit(1);
     }, 5000);
@@ -327,10 +359,10 @@ const server = app.listen(port, () => {
   Log.service({
     service: 'Application',
     action: 'Server started',
-    details: { 
+    details: {
       port,
       assetHub: getConfig().assetHubUrl,
-      relayChain: getConfig().relayChainUrl
-    }
+      relayChain: getConfig().relayChainUrl,
+    },
   });
 });
