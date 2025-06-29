@@ -3,16 +3,22 @@ import { xcmMessageCounters, dmpMetricsCache } from './schema';
 import { Log } from '../logging/Log';
 
 export async function initializeDb() {
-  const { logger } = Log;
-
   try {
     // Initialize XCM message counters for both chains
     const existingCounters = await db.query.xcmMessageCounters.findMany();
-    logger.info('Existing counters:', existingCounters);
+    Log.service({
+      service: 'Database Initialization',
+      action: 'Found existing counters',
+      details: { count: existingCounters.length }
+    });
 
     // Initialize RC counter if it doesn't exist
     if (!existingCounters.find(c => c.sourceChain === 'relay-chain')) {
-      logger.info('Initializing XCM message counter for relay-chain');
+      Log.service({
+        service: 'Database Initialization',
+        action: 'Initializing XCM message counter',
+        details: { chain: 'relay-chain', destination: 'asset-hub' }
+      });
       await db.insert(xcmMessageCounters).values({
         sourceChain: 'relay-chain',
         destinationChain: 'asset-hub',
@@ -25,7 +31,11 @@ export async function initializeDb() {
 
     // Initialize AH counter if it doesn't exist
     if (!existingCounters.find(c => c.sourceChain === 'asset-hub')) {
-      logger.info('Initializing XCM message counter for asset-hub');
+      Log.service({
+        service: 'Database Initialization',
+        action: 'Initializing XCM message counter',
+        details: { chain: 'asset-hub', destination: 'relay-chain' }
+      });
       await db.insert(xcmMessageCounters).values({
         sourceChain: 'asset-hub',
         destinationChain: 'relay-chain',
@@ -39,7 +49,10 @@ export async function initializeDb() {
     // Initialize DMP metrics cache if it doesn't exist
     const existingDmpCache = await db.query.dmpMetricsCache.findFirst();
     if (!existingDmpCache) {
-      logger.info('Initializing DMP metrics cache');
+      Log.service({
+        service: 'Database Initialization',
+        action: 'Initializing DMP metrics cache'
+      });
       await db.insert(dmpMetricsCache).values({
         currentQueueSize: 0,
         currentQueueSizeBytes: 0,
@@ -50,9 +63,16 @@ export async function initializeDb() {
       });
     }
 
-    logger.info('Database initialization completed successfully');
+    Log.service({
+      service: 'Database Initialization',
+      action: 'Database initialization completed successfully'
+    });
   } catch (error) {
-    logger.error('Error initializing database:', error);
+    Log.service({
+      service: 'Database Initialization',
+      action: 'Database initialization error',
+      error: error as Error
+    });
     throw error;
   }
 } 
