@@ -1,6 +1,8 @@
-import { db } from './index';
-import { xcmMessageCounters, dmpMetricsCache } from './schema';
 import { Log } from '../logging/Log';
+
+import { xcmMessageCounters, dmpMetricsCache } from './schema';
+
+import { db } from './index';
 
 export async function initializeDb() {
   try {

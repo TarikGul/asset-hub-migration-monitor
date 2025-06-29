@@ -2,30 +2,29 @@ import '@polkadot/api-augment';
 
 import type { VoidFn } from '@polkadot/api/types';
 
-import express, { Request, Response } from 'express';
 import cors from 'cors';
+import express, { Request, Response } from 'express';
+
+import { getConfig } from './config';
 import { initializeDb } from './db/initializeDb';
-import {
-  runRcHeadsService,
-  runRcMigrationStageService,
-  runRcXcmMessageCounterService,
-  runRcBalancesService,
-  runRcDmpDataMessageCountsService,
-} from './services/rcService';
-import { eventService } from './services/eventService';
+import { Log } from './logging/Log';
+import { updatesHandler } from './routes/updates';
 import {
   runAhMigrationStageService,
   runAhHeadsService,
   runAhXcmMessageCounterService,
   runAhEventsService,
   runAhUmpPendingMessagesService,
-} from './services/ahService';
-import { Log } from './logging/Log';
-import { runRcFinalizedHeadsService } from './services/rcService';
-import { runAhFinalizedHeadsService } from './services/ahService';
-import { updatesHandler } from './routes/updates';
+ runAhFinalizedHeadsService } from './services/ahService';
+import { eventService } from './services/eventService';
+import {
+  runRcHeadsService,
+  runRcMigrationStageService,
+  runRcXcmMessageCounterService,
+  runRcBalancesService,
+  runRcDmpDataMessageCountsService,
+ runRcFinalizedHeadsService } from './services/rcService';
 
-import { getConfig } from './config';
 
 const app = express();
 const port = getConfig().port;

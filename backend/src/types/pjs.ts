@@ -1,11 +1,11 @@
 import type { Enum, Struct, Option, u32, u16, u64, Null, u128 } from '@polkadot/types';
 import type { H256, AccountId32 } from '@polkadot/types/interfaces/runtime';
-import type { ITuple } from '@polkadot/types-codec/types';
-import type { U8aFixed } from '@polkadot/types-codec';
 import type {
   FrameSupportScheduleDispatchTime,
   PolkadotRuntimeCommonImplsVersionedLocatableAsset,
 } from '@polkadot/types/lookup';
+import type { U8aFixed } from '@polkadot/types-codec';
+import type { ITuple } from '@polkadot/types-codec/types';
 
 /** @name PalletRcMigratorCall (440) */
 interface PalletRcMigratorCall extends Enum {

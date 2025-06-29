@@ -38,6 +38,7 @@
     "@typescript-eslint/parser": "^7.0.0",
     "drizzle-kit": "^0.20.14",
     "eslint": "^8.57.0",
+    "eslint-plugin-import": "^2.29.1",
     "prettier": "^3.2.5",
     "rimraf": "^6.0.1",
     "ts-node": "^10.9.2",

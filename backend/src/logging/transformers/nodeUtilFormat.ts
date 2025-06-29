@@ -1,5 +1,6 @@
-import { SPLAT } from 'triple-beam';
 import { format } from 'util';
+
+import { SPLAT } from 'triple-beam';
 import * as winston from 'winston';
 
 import { ITransformableInfo } from '../types';

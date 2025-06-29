@@ -1,5 +1,4 @@
-import type { Bytes } from '@polkadot/types';
-import type { GenericExtrinsic } from '@polkadot/types';
+import type { Bytes , GenericExtrinsic } from '@polkadot/types';
 
 export interface XcmMessage {
   type: 'upward' | 'downward' | 'horizontal';

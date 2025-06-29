@@ -1,3 +1,12 @@
+import type { Bytes, u32 , Vec } from '@polkadot/types';
+import type { Block } from '@polkadot/types/interfaces';
+import type { ITuple } from '@polkadot/types/types';
+
+import { ApiPromise, WsProvider } from '@polkadot/api';
+import { VoidFn } from '@polkadot/api/types';
+import { sql, eq, desc } from 'drizzle-orm';
+
+import { getConfig } from '../config';
 import { db } from '../db';
 import {
   xcmMessageCounters,
@@ -6,19 +15,11 @@ import {
   dmpQueueEvents,
   umpQueueEvents,
 } from '../db/schema';
-import { sql, eq, desc } from 'drizzle-orm';
-
-import type { ITuple } from '@polkadot/types/types';
-import type { Bytes, u32 } from '@polkadot/types';
-import { AbstractApi } from './abstractApi';
 import { Log } from '../logging/Log';
-import { eventService } from './eventService';
-import { ApiPromise, WsProvider } from '@polkadot/api';
-import type { Block } from '@polkadot/types/interfaces';
-import { VoidFn } from '@polkadot/api/types';
-import { getConfig } from '../config';
-import type { Vec } from '@polkadot/types';
+
+import { AbstractApi } from './abstractApi';
 import { DmpMetricsCache } from './cache/Cache';
+import { eventService } from './eventService';
 
 // Get shared instance of DMP metrics cache
 const dmpMetricsCacheInstance = DmpMetricsCache.getInstance();

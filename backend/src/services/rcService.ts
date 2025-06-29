@@ -3,19 +3,22 @@ import type {
   PalletRcMigratorAccountsMigratedBalances,
 } from '../types/pjs';
 import type { u32, Vec } from '@polkadot/types';
-import type { ITuple } from '@polkadot/types/types';
 import type { PolkadotCorePrimitivesInboundDownwardMessage } from '@polkadot/types/lookup';
-import { db } from '../db';
-import { migrationStages, dmpQueueEvents, dmpMetricsCache } from '../db/schema';
-import { AbstractApi } from './abstractApi';
-import { VoidFn } from '@polkadot/api/types';
-import { eventService } from './eventService';
-import { xcmMessageCounters } from '../db/schema';
-import { Log } from '../logging/Log';
-import { eq } from 'drizzle-orm';
+import type { ITuple } from '@polkadot/types/types';
+
 import { ApiPromise, WsProvider } from '@polkadot/api';
+import { VoidFn } from '@polkadot/api/types';
+import { eq } from 'drizzle-orm';
+
 import { getConfig } from '../config';
+import { db } from '../db';
+import { migrationStages, dmpQueueEvents, dmpMetricsCache , xcmMessageCounters } from '../db/schema';
+import { Log } from '../logging/Log';
+
+
+import { AbstractApi } from './abstractApi';
 import { DmpMetricsCache } from './cache/Cache';
+import { eventService } from './eventService';
 
 // Get shared instance of DMP metrics cache
 const dmpMetricsCacheInstance = DmpMetricsCache.getInstance();
