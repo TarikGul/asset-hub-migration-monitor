@@ -7,7 +7,7 @@ import cors from 'cors';
 import { initializeDb } from './db/initializeDb';
 import { runRcHeadsService, runRcMigrationStageService, runRcXcmMessageCounterService, runRcBalancesService, runRcDmpDataMessageCountsService } from './services/rcService';
 import { eventService } from './services/eventService';
-import { runAhMigrationStageService, runAhHeadsService, runAhXcmMessageCounterService, runAhEventsService } from './services/ahService';
+import { runAhMigrationStageService, runAhHeadsService, runAhXcmMessageCounterService, runAhEventsService, runAhUmpPendingMessagesService } from './services/ahService';
 import { Log } from './logging/Log';
 import { runRcFinalizedHeadsService } from './services/rcService';
 import { runAhFinalizedHeadsService } from './services/ahService';
@@ -57,6 +57,7 @@ let cleanupRcFinalizedHeads: VoidFn | null = null;
 let cleanupAhFinalizedHeads: VoidFn | null = null;
 let cleanupRcBalances: VoidFn | null = null;
 let cleanupRcDmpDataMessageCounts: VoidFn | null = null;
+let cleanupAhUmpPendingMessages: VoidFn | null = null;
 
 // Start the RC finalized heads service
 runRcFinalizedHeadsService()
@@ -148,6 +149,16 @@ runAhEventsService()
   })
   .catch(err => Log.service({
     service: 'AH Events',
+    action: 'Service start error',
+    error: err as Error
+  }));
+
+runAhUmpPendingMessagesService()
+  .then((result) => {
+    cleanupAhUmpPendingMessages = result;
+  })
+  .catch(err => Log.service({
+    service: 'AH UMP Pending Messages',
     action: 'Service start error',
     error: err as Error
   }));

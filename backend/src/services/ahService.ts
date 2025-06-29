@@ -1,9 +1,9 @@
 import { db } from '../db';
-import { xcmMessageCounters, migrationStages, messageProcessingEventsAH, dmpQueueEvents } from '../db/schema';
+import { xcmMessageCounters, migrationStages, messageProcessingEventsAH, dmpQueueEvents, umpQueueEvents } from '../db/schema';
 import { sql, eq, desc } from 'drizzle-orm';
 
 import type { ITuple } from '@polkadot/types/types';
-import type { u32 } from '@polkadot/types';
+import type { Bytes, u32 } from '@polkadot/types';
 import { AbstractApi } from './abstractApi';
 import { Log } from '../logging/Log';
 import { eventService } from './eventService';
@@ -285,6 +285,44 @@ export async function runAhEventsService() {
       }
     }
   })
+
+  return unsubscribe;
+}
+
+export async function runAhUmpPendingMessagesService() {
+  const api = await AbstractApi.getInstance().getAssetHubApi();
+
+  const unsubscribe = await api.query.parachainSystem.pendingUpwardMessages(async (messages: Vec<Bytes>) => {
+    try {
+      let totalSizeBytes = 0;
+      for (const message of messages) {
+        const messageSize = message.length;
+        totalSizeBytes += messageSize;
+      }
+
+      const header = await api.rpc.chain.getHeader();
+      const blockNumber = header.number.toNumber();
+
+      await db.insert(umpQueueEvents).values({
+        queueSize: messages.length,
+        totalSizeBytes,
+        blockNumber,
+        timestamp: new Date(),
+      });
+
+      Log.service({
+        service: 'Asset Hub UMP',
+        action: 'UMP queue event recorded',
+        details: { queueSize: messages.length, totalSizeBytes, blockNumber }
+      });
+    } catch (error) {
+      Log.service({
+        service: 'Asset Hub UMP',
+        action: 'Error processing UMP pending messages',
+        error: error as Error
+      });
+    }
+  }) as unknown as VoidFn;
 
   return unsubscribe;
 }
