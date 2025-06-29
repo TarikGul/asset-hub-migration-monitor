@@ -68,6 +68,22 @@ export const dmpQueueEvents = sqliteTable('dmp_queue_events', {
   timestamp: integer('timestamp', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`),
 });
 
+// UMP Queue State Changes
+export const umpQueueEvents = sqliteTable('ump_queue_events', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  queueSize: integer('queue_size').notNull(), // Number of messages in queue
+  totalSizeBytes: integer('total_size_bytes').notNull().default(0), // Total size in bytes
+  blockNumber: integer('block_number').notNull(),
+  timestamp: integer('timestamp', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`),
+});
+
+// Message Processing Events (from Asset Hub)
+export const messageProcessingEventsRC = sqliteTable('message_processing_events_rc', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  blockNumber: integer('block_number').notNull(),
+  timestamp: integer('timestamp', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`),
+});
+
 // Message Processing Events (from Asset Hub)
 export const messageProcessingEventsAH = sqliteTable('message_processing_events', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -99,6 +115,9 @@ export const dmpMetricsCache = sqliteTable('dmp_metrics_cache', {
 
 export type DmpQueueEvent = typeof dmpQueueEvents.$inferSelect;
 export type NewDmpQueueEvent = typeof dmpQueueEvents.$inferInsert;
+
+export type UmpQueueEvent = typeof umpQueueEvents.$inferSelect;
+export type NewUmpQueueEvent = typeof umpQueueEvents.$inferInsert;
 
 export type MessageProcessingEventAH = typeof messageProcessingEventsAH.$inferSelect;
 export type NewMessageProcessingEvent = typeof messageProcessingEventsAH.$inferInsert;
