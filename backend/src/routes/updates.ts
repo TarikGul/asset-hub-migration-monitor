@@ -4,8 +4,9 @@ import { Request, Response, RequestHandler } from 'express';
 import { db } from '../db';
 import { migrationStages, xcmMessageCounters } from '../db/schema';
 import { Log } from '../logging/Log';
+import { DmpMetricsCache } from '../services/cache/DmpMetricsCache';
+import { UmpMetricsCache } from '../services/cache/UmpMetricsCache';
 import { eventService } from '../services/eventService';
-import { DmpMetricsCache } from '../services/cache/Cache';
 
 const { logger } = Log;
 
@@ -17,7 +18,8 @@ type EventType =
   | 'ahXcmMessageCounter'
   | 'rcStageUpdate'
   | 'ahStageUpdate'
-  | 'dmpMetrics';
+  | 'dmpMetrics'
+  | 'umpMetrics';
 
 export const updatesHandler: RequestHandler = async (req: Request, res: Response) => {
   const requestedEvents = ((req.query.events as string) || '')
@@ -132,6 +134,20 @@ export const updatesHandler: RequestHandler = async (req: Request, res: Response
       const dmpMetricsCacheInstance = DmpMetricsCache.getInstance();
       const currentMetrics = dmpMetricsCacheInstance.getMetrics();
       sendEvent('dmpMetrics', {
+        averageLatencyMs: currentMetrics.averageLatencyMs,
+        totalSizeBytes: currentMetrics.totalSizeBytes,
+        lastUpdated: currentMetrics.lastUpdated,
+        latencyCount: currentMetrics.latencyCount,
+        sizeCount: currentMetrics.sizeCount,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Handle DMP metrics initial state
+    if (requestedEvents.includes('umpMetrics')) {
+      const umpMetricsCacheInstance = UmpMetricsCache.getInstance();
+      const currentMetrics = umpMetricsCacheInstance.getMetrics();
+      sendEvent('umpMetrics', {
         averageLatencyMs: currentMetrics.averageLatencyMs,
         totalSizeBytes: currentMetrics.totalSizeBytes,
         lastUpdated: currentMetrics.lastUpdated,

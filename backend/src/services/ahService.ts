@@ -1,4 +1,4 @@
-import type { Bytes, u32 , Vec } from '@polkadot/types';
+import type { Bytes, u32, Vec } from '@polkadot/types';
 import type { Block } from '@polkadot/types/interfaces';
 import type { ITuple } from '@polkadot/types/types';
 
@@ -18,7 +18,7 @@ import {
 import { Log } from '../logging/Log';
 
 import { AbstractApi } from './abstractApi';
-import { DmpMetricsCache } from './cache/Cache';
+import { DmpMetricsCache } from './cache/DmpMetricsCache';
 import { eventService } from './eventService';
 
 // Get shared instance of DMP metrics cache
@@ -320,6 +320,13 @@ export async function runAhUmpPendingMessagesService() {
           totalSizeBytes,
           blockNumber,
           timestamp: new Date(),
+        });
+
+        eventService.emit('umpQueueEvent', {
+          queueSize: messages.length,
+          totalSizeBytes,
+          blockNumber,
+          timestamp: new Date().toISOString(),
         });
 
         Log.service({

@@ -8,20 +8,24 @@ import type { ITuple } from '@polkadot/types/types';
 
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { VoidFn } from '@polkadot/api/types';
-import { eq } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 
 import { getConfig } from '../config';
 import { db } from '../db';
-import { migrationStages, dmpQueueEvents, dmpMetricsCache , xcmMessageCounters } from '../db/schema';
+import {
+  migrationStages,
+  dmpQueueEvents,
+  xcmMessageCounters,
+  messageProcessingEventsRC,
+  umpQueueEvents,
+} from '../db/schema';
 import { Log } from '../logging/Log';
 
-
 import { AbstractApi } from './abstractApi';
-import { DmpMetricsCache } from './cache/Cache';
+import { UmpMetricsCache } from './cache/UmpMetricsCache';
 import { eventService } from './eventService';
 
-// Get shared instance of DMP metrics cache
-const dmpMetricsCacheInstance = DmpMetricsCache.getInstance();
+const umpMetricsCacheInstance = UmpMetricsCache.getInstance();
 
 export async function runRcFinalizedHeadsService() {
   const provider = new WsProvider(getConfig().relayChainUrl);
@@ -365,4 +369,72 @@ export async function runRcDmpDataMessageCountsService() {
   )) as unknown as VoidFn;
 
   return unsubscribeDmpDataMessageCounts;
+}
+
+export async function runRcEventsService() {
+  const api = await AbstractApi.getInstance().getRelayChainApi();
+  let lastProcessedBlock = 0; // Track the last block we processed
+
+  const unsubscribe = await api.query.system.events(async events => {
+    for (const record of events) {
+      const { event } = record;
+      if (event.section === 'messageQueue' && event.method === 'Processed') {
+        try {
+          // Get current block information
+          const header = await api.rpc.chain.getHeader();
+          const blockNumber = header.number.toNumber();
+
+          // Only process if this is a new block (avoid duplicate processing in same block)
+          if (blockNumber <= lastProcessedBlock) {
+            continue;
+          }
+          lastProcessedBlock = blockNumber;
+
+          const lastUmpEvent = await db.query.umpQueueEvents.findFirst({
+            orderBy: [desc(umpQueueEvents.timestamp)],
+          });
+
+          let latencyMs = 0;
+          if (lastUmpEvent && lastUmpEvent.timestamp) {
+            const processingTimestamp = new Date();
+            latencyMs = processingTimestamp.getTime() - lastUmpEvent.timestamp.getTime();
+          }
+
+          // Update cache with new latency
+          umpMetricsCacheInstance.updateAverageLatency(latencyMs);
+
+          eventService.emit('umpLatency', {
+            latencyMs,
+            averageLatencyMs: umpMetricsCacheInstance.getAverageLatencyMs(),
+            blockNumber,
+            timestamp: new Date().toISOString(),
+          });
+
+          // Save to database
+          await db.insert(messageProcessingEventsRC).values({
+            blockNumber,
+            timestamp: new Date(),
+          });
+
+          Log.chainEvent({
+            chain: 'relay-chain',
+            eventType: 'MessageQueue.Processed',
+            blockNumber,
+            details: {
+              eventData: event.toJSON(),
+              latencyMs,
+            },
+          });
+        } catch (error) {
+          Log.chainEvent({
+            chain: 'relay-chain',
+            eventType: 'MessageQueue.Processed database error',
+            error: error as Error,
+          });
+        }
+      }
+    }
+  });
+
+  return unsubscribe;
 }

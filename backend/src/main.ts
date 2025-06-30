@@ -15,7 +15,8 @@ import {
   runAhXcmMessageCounterService,
   runAhEventsService,
   runAhUmpPendingMessagesService,
- runAhFinalizedHeadsService } from './services/ahService';
+  runAhFinalizedHeadsService,
+} from './services/ahService';
 import { eventService } from './services/eventService';
 import {
   runRcHeadsService,
@@ -23,8 +24,9 @@ import {
   runRcXcmMessageCounterService,
   runRcBalancesService,
   runRcDmpDataMessageCountsService,
- runRcFinalizedHeadsService } from './services/rcService';
-
+  runRcFinalizedHeadsService,
+  runRcEventsService,
+} from './services/rcService';
 
 const app = express();
 const port = getConfig().port;
@@ -69,6 +71,7 @@ let cleanupAhFinalizedHeads: VoidFn | null = null;
 let cleanupRcBalances: VoidFn | null = null;
 let cleanupRcDmpDataMessageCounts: VoidFn | null = null;
 let cleanupAhUmpPendingMessages: VoidFn | null = null;
+let cleanupRcEvents: VoidFn | null = null;
 
 // Start the RC finalized heads service
 runRcFinalizedHeadsService()
@@ -189,6 +192,18 @@ runAhUmpPendingMessagesService()
   .catch(err =>
     Log.service({
       service: 'AH UMP Pending Messages',
+      action: 'Service start error',
+      error: err as Error,
+    })
+  );
+
+runRcEventsService()
+  .then(result => {
+    cleanupRcEvents = result;
+  })
+  .catch(err =>
+    Log.service({
+      service: 'RC Events',
       action: 'Service start error',
       error: err as Error,
     })
@@ -341,6 +356,14 @@ signals.forEach(signal => {
         action: 'Cleaning up AH UMP pending messages subscription',
       });
       cleanupAhUmpPendingMessages();
+    }
+
+    if (cleanupRcEvents) {
+      Log.service({
+        service: 'Application',
+        action: 'Cleaning up RC events subscription',
+      });
+      cleanupRcEvents();
     }
 
     server.close(() => {
