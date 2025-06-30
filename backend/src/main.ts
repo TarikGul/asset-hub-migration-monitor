@@ -335,6 +335,14 @@ signals.forEach(signal => {
       cleanupAhEvents();
     }
 
+    if (cleanupAhUmpPendingMessages) {
+      Log.service({
+        service: 'Application',
+        action: 'Cleaning up AH UMP pending messages subscription',
+      });
+      cleanupAhUmpPendingMessages();
+    }
+
     server.close(() => {
       Log.service({
         service: 'Application',
