@@ -5,6 +5,7 @@ import { db } from '../db';
 import { migrationStages, xcmMessageCounters } from '../db/schema';
 import { Log } from '../logging/Log';
 import { eventService } from '../services/eventService';
+import { DmpMetricsCache } from '../services/cache/Cache';
 
 const { logger } = Log;
 
@@ -15,7 +16,8 @@ type EventType =
   | 'rcXcmMessageCounter'
   | 'ahXcmMessageCounter'
   | 'rcStageUpdate'
-  | 'ahStageUpdate';
+  | 'ahStageUpdate'
+  | 'dmpMetrics';
 
 export const updatesHandler: RequestHandler = async (req: Request, res: Response) => {
   const requestedEvents = ((req.query.events as string) || '')
@@ -123,6 +125,20 @@ export const updatesHandler: RequestHandler = async (req: Request, res: Response
           timestamp: ahStage.timestamp,
         });
       }
+    }
+
+    // Handle DMP metrics initial state
+    if (requestedEvents.includes('dmpMetrics')) {
+      const dmpMetricsCacheInstance = DmpMetricsCache.getInstance();
+      const currentMetrics = dmpMetricsCacheInstance.getMetrics();
+      sendEvent('dmpMetrics', {
+        averageLatencyMs: currentMetrics.averageLatencyMs,
+        totalSizeBytes: currentMetrics.totalSizeBytes,
+        lastUpdated: currentMetrics.lastUpdated,
+        latencyCount: currentMetrics.latencyCount,
+        sizeCount: currentMetrics.sizeCount,
+        timestamp: new Date().toISOString(),
+      });
     }
   } catch (error) {
     logger.error('Error sending initial state:', error);
