@@ -138,4 +138,93 @@ tbody tr:hover {
   font-size: 0.875rem;
   color: var(--text-light);
   font-weight: 500;
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 1024px) {
+  .pallet-status {
+    grid-column: 1 / -1;
+  }
+
+  .search-input {
+    width: 100%;
+    max-width: 300px;
+  }
+}
+
+@media (max-width: 768px) {
+  .search-input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 2.5rem;
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+
+  .table-container {
+    margin-top: 0.75rem;
+  }
+
+  table {
+    font-size: 0.75rem;
+  }
+
+  th, td {
+    padding: 0.5rem 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  /* Make table scrollable horizontally on mobile */
+  .table-container {
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+
+  table {
+    min-width: 600px; /* Ensure minimum width for readability */
+  }
+
+  .badge {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.7rem;
+  }
+
+  .pagination {
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: stretch;
+  }
+
+  .pagination-btn {
+    justify-content: center;
+    padding: 0.75rem 1rem;
+    min-height: 44px; /* Touch-friendly target */
+  }
+
+  .pagination-info {
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .search-input {
+    padding: 0.875rem 1rem 0.875rem 2.5rem;
+  }
+
+  th, td {
+    padding: 0.375rem 0.25rem;
+    font-size: 0.7rem;
+  }
+
+  .badge {
+    padding: 0.25rem 0.375rem;
+    font-size: 0.65rem;
+  }
+
+  .pagination-btn {
+    padding: 0.875rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  .progress-bar {
+    height: 6px;
+  }
 } 

@@ -18,6 +18,8 @@
   text-align: center;
   min-height: 100vh;
   background-color: #f0f2f5;
+  overflow-x: hidden;
+  width: 100%;
 }
 
 header {
@@ -27,16 +29,20 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .logo {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  flex-shrink: 0;
 }
 
 .logo img {
   height: 32px;
+  width: auto;
 }
 
 .logo h1 {
@@ -49,6 +55,8 @@ header {
   display: flex;
   align-items: center;
   gap: 1.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .timestamp {
@@ -60,6 +68,7 @@ header {
   display: flex;
   align-items: center;
   gap: 1.5rem;
+  flex-wrap: wrap;
 }
 
 .head-display {
@@ -70,6 +79,7 @@ header {
   background-color: var(--light-bg);
   border-radius: 6px;
   font-size: 0.875rem;
+  white-space: nowrap;
 }
 
 .head-label {
@@ -101,6 +111,8 @@ main {
   grid-template-rows: auto auto;
   gap: 1.5rem;
   min-height: 600px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .card {
@@ -110,6 +122,9 @@ main {
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .card-header {
@@ -117,6 +132,8 @@ main {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .card-title {
@@ -128,6 +145,7 @@ main {
 .card-actions {
   display: flex;
   gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .migration-status {
@@ -171,6 +189,8 @@ main {
   display: flex;
   justify-content: space-between;
   margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .progress-label {
@@ -190,6 +210,8 @@ main {
   position: relative;
   margin-top: 2rem;
   padding-top: 16px;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .timeline::before {
@@ -209,6 +231,8 @@ main {
   align-items: center;
   position: relative;
   z-index: 1;
+  flex: 1;
+  min-width: 80px;
 }
 
 .point-marker {
@@ -224,56 +248,71 @@ main {
   background-color: var(--primary);
 }
 
+.point-marker.ongoing {
+  background-color: var(--warning);
+  border-color: var(--warning);
+}
+
 .point-label {
   font-size: 0.75rem;
   color: var(--text-light);
   text-align: center;
   max-width: 80px;
+  word-wrap: break-word;
 }
 
 /* Message metrics */
 .message-metrics {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 1rem;
-  margin-bottom: 1.5rem;
+  margin-top: 1rem;
 }
 
 .metric {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+  text-align: center;
+  padding: 1rem;
+  background-color: var(--light-bg);
+  border-radius: 6px;
 }
 
 .metric-value {
   font-size: 1.5rem;
   font-weight: 700;
+  color: var(--primary);
 }
 
 .metric-label {
   font-size: 0.75rem;
   color: var(--text-light);
+  margin-top: 0.25rem;
 }
 
 .metric-change {
   font-size: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.metric-change.positive {
   color: var(--success);
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
+}
+
+.metric-change.negative {
+  color: var(--danger);
 }
 
 /* Migration status container */
 .migration-status-container {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1rem;
+  margin-top: 1rem;
 }
 
 .status-column {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.5rem;
 }
 
 .block-number-display {
@@ -284,18 +323,236 @@ main {
   background-color: var(--light-bg);
   border-radius: 6px;
   font-size: 0.875rem;
-  font-weight: 500;
+  position: relative;
 }
 
 .block-number-display::before {
   content: '';
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: var(--success);
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background-color: var(--primary);
+  border-radius: 6px 0 0 6px;
 }
 
 .block-number-display span {
-  color: var(--text-light);
-  font-weight: 400;
+  font-weight: 600;
+  font-family: 'Roboto Mono', monospace;
+}
+
+/* Mobile Responsive Design */
+@media (max-width: 1024px) {
+  main {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    gap: 1rem;
+    padding: 1rem;
+  }
+
+  .migration-status,
+  .xcm-messages,
+  .pallet-status {
+    grid-column: 1 / -1;
+  }
+
+  .xcm-messages {
+    grid-row: auto;
+  }
+
+  .card {
+    padding: 1rem;
+  }
+
+  .stage-name {
+    font-size: 1.25rem;
+  }
+
+  .message-metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .migration-status-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .app {
+    overflow-x: hidden;
+    width: 100vw;
+  }
+
+  header {
+    padding: 1rem;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .header-info {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+    width: 100%;
+  }
+
+  .finalized-heads {
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .head-display {
+    justify-content: center;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .logo h1 {
+    font-size: 1rem;
+  }
+
+  .logo img {
+    height: 24px;
+  }
+
+  main {
+    padding: 0.75rem;
+    gap: 0.75rem;
+    width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+
+  .card {
+    padding: 0.75rem;
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  .card-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    width: 100%;
+  }
+
+  .card-actions {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .timeline {
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .timeline::before {
+    display: none;
+  }
+
+  .timeline-point {
+    flex-direction: row;
+    gap: 0.75rem;
+    min-width: auto;
+  }
+
+  .point-marker {
+    margin-bottom: 0;
+  }
+
+  .point-label {
+    text-align: left;
+    max-width: none;
+  }
+
+  .message-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .metric {
+    padding: 0.75rem;
+  }
+
+  .metric-value {
+    font-size: 1.25rem;
+  }
+
+  .stage-name {
+    font-size: 1.125rem;
+  }
+
+  .progress-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .app {
+    font-size: 14px;
+  }
+
+  header {
+    padding: 0.75rem;
+  }
+
+  main {
+    padding: 0.5rem;
+  }
+
+  .card {
+    padding: 0.5rem;
+  }
+
+  .logo {
+    justify-content: center;
+  }
+
+  .timestamp {
+    text-align: center;
+  }
+
+  .head-display {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  .metric {
+    padding: 0.5rem;
+  }
+
+  .metric-value {
+    font-size: 1rem;
+  }
+
+  .stage-name {
+    font-size: 1rem;
+  }
+}
+
+/* Touch-friendly improvements */
+@media (hover: none) and (pointer: coarse) {
+  .card-actions button,
+  .search-input,
+  .head-display {
+    min-height: 44px;
+  }
+
+  .point-marker {
+    width: 20px;
+    height: 20px;
+  }
+
+  .indicator-dot {
+    width: 12px;
+    height: 12px;
+  }
 } 

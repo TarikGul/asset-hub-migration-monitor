@@ -9,6 +9,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .url-input {
@@ -115,4 +116,73 @@
 .edit-button:hover {
   border-color: #007bff;
   color: #007bff;
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+  .backend-url-input {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .url-form {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .url-input {
+    min-width: auto;
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+
+  .url-submit,
+  .url-cancel {
+    padding: 10px 16px;
+    font-size: 16px;
+    min-height: 44px; /* Touch-friendly target */
+  }
+
+  .url-display {
+    padding: 10px 12px;
+    min-height: 44px;
+    justify-content: space-between;
+  }
+
+  .url-text {
+    font-size: 14px;
+    word-break: break-all;
+  }
+
+  .edit-button {
+    padding: 6px 12px;
+    font-size: 14px;
+    min-height: 36px;
+  }
+
+  .connection-status {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .url-input {
+    padding: 10px 12px;
+  }
+
+  .url-submit,
+  .url-cancel {
+    padding: 12px 16px;
+  }
+
+  .url-display {
+    padding: 12px;
+  }
+
+  .url-text {
+    font-size: 13px;
+  }
 } 

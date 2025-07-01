@@ -152,4 +152,97 @@ tbody tr:hover {
 .indicator-label {
   font-size: 0.75rem;
   font-weight: 500;
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+  .progress-bar {
+    height: 6px;
+  }
+
+  .badge {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.7rem;
+  }
+
+  .chart-container {
+    height: 200px;
+  }
+
+  .search-input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 2.5rem;
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+
+  .table-container {
+    margin-top: 0.75rem;
+  }
+
+  table {
+    font-size: 0.75rem;
+  }
+
+  th, td {
+    padding: 0.5rem 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  .health-indicators {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .health-indicator {
+    padding: 0.5rem;
+  }
+
+  .indicator-label {
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .badge {
+    padding: 0.25rem 0.375rem;
+    font-size: 0.65rem;
+  }
+
+  .chart-container {
+    height: 150px;
+  }
+
+  .search-input {
+    padding: 0.875rem 1rem 0.875rem 2.5rem;
+  }
+
+  th, td {
+    padding: 0.375rem 0.25rem;
+    font-size: 0.7rem;
+  }
+
+  .health-indicator {
+    padding: 0.375rem;
+  }
+
+  .indicator-label {
+    font-size: 0.65rem;
+  }
+
+  .progress-bar {
+    height: 4px;
+  }
+}
+
+/* Touch-friendly improvements */
+@media (hover: none) and (pointer: coarse) {
+  .badge,
+  .search-input,
+  .health-indicator {
+    min-height: 44px;
+  }
+
+  .progress-bar {
+    height: 8px;
+  }
 } 

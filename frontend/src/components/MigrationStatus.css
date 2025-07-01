@@ -135,4 +135,58 @@
 .indicator-label {
   font-size: 0.75rem;
   font-weight: 500;
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+  .migration-status {
+    grid-column: 1 / -1;
+    overflow: hidden;
+  }
+  
+  .stage-name {
+    font-size: 1.125rem;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  
+  .stage-description {
+    font-size: 0.8rem;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  
+  .progress-container {
+    margin-bottom: 1rem;
+  }
+  
+  .progress-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+  
+  .progress-label,
+  .progress-value {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .migration-status {
+    padding: 0.75rem;
+  }
+  
+  .stage-name {
+    font-size: 1rem;
+  }
+  
+  .stage-description {
+    font-size: 0.75rem;
+  }
+  
+  .progress-label,
+  .progress-value {
+    font-size: 0.75rem;
+  }
 } 

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useEventSource } from '../hooks/useEventSource';
 import type { EventType } from '../hooks/useEventSource';
 import { MIGRATION_PALLETS } from '../constants/migrationPallets';
@@ -15,6 +15,19 @@ interface MigrationStage {
 const MigrationStatus: React.FC = () => {
   const [currentStage, setCurrentStage] = useState<MigrationStage | null>(null);
   const [completedPallets, setCompletedPallets] = useState<string[]>([]);
+  const [isMobile, setIsMobile] = useState(false);
+  
+  // Check if we're on mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   
   // Subscribe to RC migration stage updates
   const { error } = useEventSource(['rcStageUpdate'], useCallback((_eventType: EventType, data: MigrationStage) => {
@@ -94,34 +107,39 @@ const MigrationStatus: React.FC = () => {
         </div>
       </div>
       
-      <div className="timeline">
-        {visiblePallets.map((pallet, index) => {
-          const isCompleted = completedPallets.includes(pallet);
-          const isCurrent = currentStage?.stage.toLowerCase().includes(pallet.toLowerCase());
+      {/* Only show timeline and health indicators on desktop/tablet */}
+      {!isMobile && (
+        <>
+          <div className="timeline">
+            {visiblePallets.map((pallet, index) => {
+              const isCompleted = completedPallets.includes(pallet);
+              const isCurrent = currentStage?.stage.toLowerCase().includes(pallet.toLowerCase());
+              
+              return (
+                <div key={pallet} className="timeline-point">
+                  <div className={`point-marker ${isCompleted ? 'completed' : isCurrent ? 'ongoing' : ''}`}></div>
+                  <div className="point-label">{pallet}</div>
+                </div>
+              );
+            })}
+          </div>
           
-          return (
-            <div key={pallet} className="timeline-point">
-              <div className={`point-marker ${isCompleted ? 'completed' : isCurrent ? 'ongoing' : ''}`}></div>
-              <div className="point-label">{pallet}</div>
+          <div className="health-indicators">
+            <div className="health-indicator">
+              <div className="indicator-dot dot-green"></div>
+              <span className="indicator-label">Overall Status</span>
             </div>
-          );
-        })}
-      </div>
-      
-      <div className="health-indicators">
-        <div className="health-indicator">
-          <div className="indicator-dot dot-green"></div>
-          <span className="indicator-label">Overall Status</span>
-        </div>
-        <div className="health-indicator">
-          <div className="indicator-dot dot-yellow"></div>
-          <span className="indicator-label">XCM Messages</span>
-        </div>
-        <div className="health-indicator">
-          <div className="indicator-dot dot-green"></div>
-          <span className="indicator-label">Balance Consistency</span>
-        </div>
-      </div>
+            <div className="health-indicator">
+              <div className="indicator-dot dot-yellow"></div>
+              <span className="indicator-label">XCM Messages</span>
+            </div>
+            <div className="health-indicator">
+              <div className="indicator-dot dot-green"></div>
+              <span className="indicator-label">Balance Consistency</span>
+            </div>
+          </div>
+        </>
+      )}
     </section>
   );
 };
