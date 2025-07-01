@@ -101,6 +101,13 @@ export const messageProcessingEventsAH = sqliteTable('message_processing_events'
   timestamp: integer('timestamp', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`),
 });
 
+// Upward Message Sent Events (from Asset Hub)
+export const upwardMessageSentEvents = sqliteTable('upward_message_sent_events', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  blockNumber: integer('block_number').notNull(),
+  timestamp: integer('timestamp', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`),
+});
+
 // Queue-Processing Correlation
 export const queueProcessingCorrelation = sqliteTable('queue_processing_correlation', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -143,3 +150,6 @@ export type NewQueueProcessingCorrelation = typeof queueProcessingCorrelation.$i
 
 export type DmpMetricsCache = typeof dmpMetricsCache.$inferSelect;
 export type NewDmpMetricsCache = typeof dmpMetricsCache.$inferInsert;
+
+export type UpwardMessageSentEvent = typeof upwardMessageSentEvents.$inferSelect;
+export type NewUpwardMessageSentEvent = typeof upwardMessageSentEvents.$inferInsert;

@@ -14,12 +14,14 @@ import {
   messageProcessingEventsAH,
   dmpQueueEvents,
   umpQueueEvents,
+  upwardMessageSentEvents,
 } from '../db/schema';
 import { Log } from '../logging/Log';
 
 import { AbstractApi } from './abstractApi';
 import { DmpMetricsCache } from './cache/DmpMetricsCache';
 import { eventService } from './eventService';
+import { UmpLatencyProcessor } from './cache/UmpLatencyProcessor';
 
 // Get shared instance of DMP metrics cache
 const dmpMetricsCacheInstance = DmpMetricsCache.getInstance();
@@ -290,6 +292,42 @@ export async function runAhEventsService() {
           Log.chainEvent({
             chain: 'asset-hub',
             eventType: 'MessageQueue.Processed database error',
+            error: error as Error,
+          });
+        }
+      }
+
+      if (event.section === 'parachainSystem' && event.method === 'UpwardMessageSent') {
+        try {
+          const header = await api.rpc.chain.getHeader();
+          const blockNumber = header.number.toNumber();
+          const timestamp = new Date();
+
+          await db.insert(upwardMessageSentEvents).values({
+            blockNumber,
+            timestamp,
+          });
+
+          // Add to latency processor
+          const umpLatencyProcessor = UmpLatencyProcessor.getInstance();
+          umpLatencyProcessor.addUpwardMessageSent(blockNumber, timestamp);
+
+          eventService.emit('upwardMessageSent', {
+            timestamp: timestamp.toISOString(),
+          });
+
+          Log.chainEvent({
+            chain: 'asset-hub',
+            eventType: 'UpwardMessageSent',
+            blockNumber,
+            details: {
+              eventData: event.toJSON(),
+            },
+          });
+        } catch (error) {
+          Log.chainEvent({  
+            chain: 'asset-hub',
+            eventType: 'UpwardMessageSent database error',
             error: error as Error,
           });
         }

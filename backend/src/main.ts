@@ -20,12 +20,12 @@ import {
 import { eventService } from './services/eventService';
 import {
   runRcHeadsService,
-  runRcMigrationStageService,
+  runRcMessageQueueProcessedService,
   runRcXcmMessageCounterService,
   runRcBalancesService,
   runRcDmpDataMessageCountsService,
   runRcFinalizedHeadsService,
-  runRcEventsService,
+  runRcMigrationStageService,
 } from './services/rcService';
 
 const app = express();
@@ -197,13 +197,13 @@ runAhUmpPendingMessagesService()
     })
   );
 
-runRcEventsService()
-  .then(result => {
+runRcMessageQueueProcessedService()
+  .then((result: VoidFn) => {
     cleanupRcEvents = result;
   })
-  .catch(err =>
+  .catch((err: Error) =>
     Log.service({
-      service: 'RC Events',
+      service: 'RC Message Queue Processed',
       action: 'Service start error',
       error: err as Error,
     })
@@ -265,7 +265,7 @@ signals.forEach(signal => {
     if (cleanupMigrationStage) {
       Log.service({
         service: 'Application',
-        action: 'Cleaning up migration stage subscription',
+        action: 'Cleaning up RC migration stage subscription',
       });
       cleanupMigrationStage();
     }

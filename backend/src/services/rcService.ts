@@ -17,15 +17,12 @@ import {
   dmpQueueEvents,
   xcmMessageCounters,
   messageProcessingEventsRC,
-  umpQueueEvents,
 } from '../db/schema';
 import { Log } from '../logging/Log';
 
 import { AbstractApi } from './abstractApi';
-import { UmpMetricsCache } from './cache/UmpMetricsCache';
 import { eventService } from './eventService';
-
-const umpMetricsCacheInstance = UmpMetricsCache.getInstance();
+import { UmpLatencyProcessor } from './cache/UmpLatencyProcessor';
 
 export async function runRcFinalizedHeadsService() {
   const provider = new WsProvider(getConfig().relayChainUrl);
@@ -371,50 +368,27 @@ export async function runRcDmpDataMessageCountsService() {
   return unsubscribeDmpDataMessageCounts;
 }
 
-export async function runRcEventsService() {
+export async function runRcMessageQueueProcessedService() {
   const api = await AbstractApi.getInstance().getRelayChainApi();
-  let lastProcessedBlock = 0; // Track the last block we processed
+  const umpLatencyProcessor = UmpLatencyProcessor.getInstance();
 
   const unsubscribe = await api.query.system.events(async events => {
     for (const record of events) {
       const { event } = record;
       if (event.section === 'messageQueue' && event.method === 'Processed') {
         try {
-          // Get current block information
           const header = await api.rpc.chain.getHeader();
           const blockNumber = header.number.toNumber();
-
-          // Only process if this is a new block (avoid duplicate processing in same block)
-          if (blockNumber <= lastProcessedBlock) {
-            continue;
-          }
-          lastProcessedBlock = blockNumber;
-
-          const lastUmpEvent = await db.query.umpQueueEvents.findFirst({
-            orderBy: [desc(umpQueueEvents.timestamp)],
-          });
-
-          let latencyMs = 0;
-          if (lastUmpEvent && lastUmpEvent.timestamp) {
-            const processingTimestamp = new Date();
-            latencyMs = processingTimestamp.getTime() - lastUmpEvent.timestamp.getTime();
-          }
-
-          // Update cache with new latency
-          umpMetricsCacheInstance.updateAverageLatency(latencyMs);
-
-          eventService.emit('umpLatency', {
-            latencyMs,
-            averageLatencyMs: umpMetricsCacheInstance.getAverageLatencyMs(),
-            blockNumber,
-            timestamp: new Date().toISOString(),
-          });
+          const timestamp = new Date();
 
           // Save to database
           await db.insert(messageProcessingEventsRC).values({
             blockNumber,
-            timestamp: new Date(),
+            timestamp,
           });
+
+          // Add to latency processor
+          umpLatencyProcessor.addMessageQueueProcessed(blockNumber, timestamp);
 
           Log.chainEvent({
             chain: 'relay-chain',
@@ -422,7 +396,6 @@ export async function runRcEventsService() {
             blockNumber,
             details: {
               eventData: event.toJSON(),
-              latencyMs,
             },
           });
         } catch (error) {
