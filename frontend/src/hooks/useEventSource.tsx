@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback, useRef } from 'react';
 
-export type EventType = 'rcHead' | 'ahHead' | 'rcBalances' | 'rcXcmMessageCounter' | 'ahXcmMessageCounter' | 'rcStageUpdate' | 'ahStageUpdate' | 'dmpLatency' | 'dmpQueueEvent' | 'umpLatency' | 'umpMetrics' | 'umpQueueEvent';
+export type EventType = 'rcHead' | 'ahHead' | 'rcXcmMessageCounter' | 'ahXcmMessageCounter' | 'rcStageUpdate' | 'ahStageUpdate' | 'dmpLatency' | 'dmpQueueEvent' | 'umpLatency' | 'umpMetrics' | 'umpQueueEvent';
 
 interface EventSourceContextType {
   subscribe: (events: EventType[], callback: (eventType: EventType, data: any) => void) => () => void;
@@ -75,7 +75,7 @@ export const EventSourceProvider: React.FC<EventSourceProviderProps> = ({
       eventSourceRef.current.close();
     }
 
-    const allEventTypes: EventType[] = ['rcHead', 'ahHead', 'rcBalances', 'rcXcmMessageCounter', 'ahXcmMessageCounter', 'rcStageUpdate', 'ahStageUpdate', 'dmpLatency', 'dmpQueueEvent', 'umpLatency', 'umpMetrics', 'umpQueueEvent'];
+    const allEventTypes: EventType[] = ['rcHead', 'ahHead', 'rcXcmMessageCounter', 'ahXcmMessageCounter', 'rcStageUpdate', 'ahStageUpdate', 'dmpLatency', 'dmpQueueEvent', 'umpLatency', 'umpMetrics', 'umpQueueEvent'];
     const apiUrl = url ? `${url}/api/updates` : '/api/updates';
     const es = new EventSource(`${apiUrl}?events=${allEventTypes.join(',')}`);
     
