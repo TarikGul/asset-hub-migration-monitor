@@ -24,9 +24,7 @@ export class UmpLatencyProcessor {
 
   // Add upward message sent event
   public addUpwardMessageSent(blockNumber: number, timestamp: Date): void {
-    console.log('addUpwardMessageSent', blockNumber, timestamp);
-    this.upwardMessageStack.push({ timestamp, blockNumber });
-    
+    this.upwardMessageStack.push({ timestamp, blockNumber });    
     // Keep only the last maxStackSize events
     if (this.upwardMessageStack.length > this.maxStackSize) {
       this.upwardMessageStack.shift();
@@ -38,7 +36,6 @@ export class UmpLatencyProcessor {
 
   // Add message queue processed event
   public addMessageQueueProcessed(blockNumber: number, timestamp: Date): void {
-    console.log('addMessageQueueProcessed', blockNumber, timestamp);
     this.messageQueueStack.push({ timestamp, blockNumber });
     
     // Keep only the last maxStackSize events
@@ -56,13 +53,9 @@ export class UmpLatencyProcessor {
       const upwardEvent = this.upwardMessageStack[0];
       const queueEvent = this.messageQueueStack[0];
 
-      console.log('upwardEvent', upwardEvent);
-      console.log('queueEvent', queueEvent);
-
       // If upward message came first, calculate latency
       if (upwardEvent.timestamp <= queueEvent.timestamp) {
         const latencyMs = queueEvent.timestamp.getTime() - upwardEvent.timestamp.getTime();
-        console.log('latencyMs', latencyMs);
         this.emitLatency(latencyMs, queueEvent.blockNumber, queueEvent.timestamp);
         
         // Remove processed events
@@ -71,7 +64,6 @@ export class UmpLatencyProcessor {
       } 
       // If message queue processed came first (race condition), use default latency
       else {
-        console.log('defaultLatencyMs', this.defaultLatencyMs);
         this.emitLatency(this.defaultLatencyMs, queueEvent.blockNumber, queueEvent.timestamp);
         
         // Remove the queue event but keep the upward message for potential future matching

@@ -280,21 +280,6 @@ export async function runRcXcmMessageCounterService() {
   return unsubscribeXcmMessages;
 }
 
-export async function runRcBalancesService() {
-  const api = await AbstractApi.getInstance().getRelayChainApi();
-
-  const unsubscribeAccountsMigration = (await api.query.rcMigrator.rcMigratedBalance(
-    async (balances: PalletRcMigratorAccountsMigratedBalances) => {
-      eventService.emit('rcBalances', {
-        kept: balances.kept.toString(),
-        migrated: balances.migrated.toString(),
-      });
-    }
-  )) as unknown as VoidFn;
-
-  return unsubscribeAccountsMigration;
-}
-
 export async function runRcDmpDataMessageCountsService() {
   const api = await AbstractApi.getInstance().getRelayChainApi();
 

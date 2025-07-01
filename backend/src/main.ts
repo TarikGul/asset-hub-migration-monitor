@@ -22,7 +22,6 @@ import {
   runRcHeadsService,
   runRcMessageQueueProcessedService,
   runRcXcmMessageCounterService,
-  runRcBalancesService,
   runRcDmpDataMessageCountsService,
   runRcFinalizedHeadsService,
   runRcMigrationStageService,
@@ -68,7 +67,6 @@ let cleanupRcXcmMessageCounter: VoidFn | null = null;
 let cleanupAhXcmMessageCounter: VoidFn | null = null;
 let cleanupRcFinalizedHeads: VoidFn | null = null;
 let cleanupAhFinalizedHeads: VoidFn | null = null;
-let cleanupRcBalances: VoidFn | null = null;
 let cleanupRcDmpDataMessageCounts: VoidFn | null = null;
 let cleanupAhUmpPendingMessages: VoidFn | null = null;
 let cleanupRcEvents: VoidFn | null = null;
@@ -143,19 +141,6 @@ runAhFinalizedHeadsService()
   .catch(err =>
     Log.service({
       service: 'AH Finalized Heads',
-      action: 'Service start error',
-      error: err as Error,
-    })
-  );
-
-// Start the RC balances service
-runRcBalancesService()
-  .then(result => {
-    cleanupRcBalances = result;
-  })
-  .catch(err =>
-    Log.service({
-      service: 'RC Balances',
       action: 'Service start error',
       error: err as Error,
     })
@@ -324,14 +309,6 @@ signals.forEach(signal => {
         action: 'Cleaning up RC finalized heads subscription',
       });
       cleanupRcFinalizedHeads();
-    }
-
-    if (cleanupRcBalances) {
-      Log.service({
-        service: 'Application',
-        action: 'Cleaning up RC balances subscription',
-      });
-      cleanupRcBalances();
     }
 
     if (cleanupRcDmpDataMessageCounts) {
