@@ -248,12 +248,12 @@ const XcmMessageMetrics: React.FC = () => {
               <div className="queue-section-label">Current Depth</div>
             </div>
             <div className="queue-section-metric">
-              <div className="queue-section-value">{formatBytes(umpQueueEvent?.totalSizeBytes || 0)}</div>
+              <div className="queue-section-value">{formatBytes(umpQueueEvent?.totalSizeBytes || umpMetrics?.totalSizeBytes || 0)}</div>
               <div className="queue-section-label">Total Size</div>
             </div>
             <div className="queue-section-metric">
-              <div className="queue-section-value" style={{ color: getLatencyColor(umpLatency?.averageLatencyMs || 0) }}>
-                {formatLatency(umpLatency?.averageLatencyMs || 0)}
+              <div className="queue-section-value" style={{ color: getLatencyColor(umpLatency?.averageLatencyMs || umpMetrics?.averageLatencyMs || 0) }}>
+                {formatLatency(umpLatency?.averageLatencyMs || umpMetrics?.averageLatencyMs || 0)}
               </div>
               <div className="queue-section-label">Avg Latency</div>
             </div>
