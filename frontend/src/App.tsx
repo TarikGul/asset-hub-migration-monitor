@@ -6,6 +6,7 @@ import BackendUrlInput from './components/BackendUrlInput';
 import { useEventSource, useBackendUrl } from './hooks/useEventSource';
 import type { EventType } from './hooks/useEventSource';
 import './App.css';
+import polkadotLogo from './assets/Polkadot_Token_Pink.png';
 
 function App() {
   const [rcBlockNumber, setRcBlockNumber] = useState<number | null>(null);
@@ -31,7 +32,7 @@ function App() {
     <div className="app">
       <header>
         <div className="logo">
-          <img src="https://polkadot.network/assets/img/logo-polkadot.svg" alt="Polkadot Logo" />
+          <img src={polkadotLogo} alt="Polkadot Logo" />
           <h1>Asset Hub Migration Monitor</h1>
         </div>
         <div className="header-info">
