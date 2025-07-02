@@ -50,6 +50,15 @@ interface UmpMetrics {
   timestamp: string;
 }
 
+interface DmpMetrics {
+  averageLatencyMs: number;
+  totalSizeBytes: number;
+  lastUpdated: string;
+  latencyCount: number;
+  sizeCount: number;
+  timestamp: string;
+}
+
 const XcmMessageMetrics: React.FC = () => {
   const [rcCounter, setRcCounter] = useState<XcmCounter | null>(null);
   const [ahCounter, setAhCounter] = useState<XcmCounter | null>(null);
@@ -58,6 +67,7 @@ const XcmMessageMetrics: React.FC = () => {
   const [dmpQueueEvent, setDmpQueueEvent] = useState<DmpQueueEvent | null>(null);
   const [umpQueueEvent, setUmpQueueEvent] = useState<UmpQueueEvent | null>(null);
   const [umpMetrics, setUmpMetrics] = useState<UmpMetrics | null>(null);
+  const [dmpMetrics, setDmpMetrics] = useState<DmpMetrics | null>(null);
 
   // Subscribe to RC and AH XCM message counter events
   const { error: xcmError } = useEventSource(['rcXcmMessageCounter', 'ahXcmMessageCounter'], useCallback((eventType: EventType, data: XcmCounter) => {
@@ -86,6 +96,13 @@ const XcmMessageMetrics: React.FC = () => {
   const { error: umpMetricsError } = useEventSource(['umpMetrics'], useCallback((eventType: EventType, data: UmpMetrics) => {
     if (eventType === 'umpMetrics') {
       setUmpMetrics(data);
+    }
+  }, []));
+
+  // Subscribe to DMP metrics events
+  const { error: dmpMetricsError } = useEventSource(['dmpMetrics'], useCallback((eventType: EventType, data: DmpMetrics) => {
+    if (eventType === 'dmpMetrics') {
+      setDmpMetrics(data);
     }
   }, []));
 
@@ -215,12 +232,12 @@ const XcmMessageMetrics: React.FC = () => {
               <div className="queue-section-label">Current Depth</div>
             </div>
             <div className="queue-section-metric">
-              <div className="queue-section-value">{formatBytes(dmpQueueEvent?.totalSizeBytes || 0)}</div>
+              <div className="queue-section-value">{formatBytes(dmpQueueEvent?.totalSizeBytes || dmpMetrics?.totalSizeBytes || 0)}</div>
               <div className="queue-section-label">Total Size</div>
             </div>
             <div className="queue-section-metric">
-              <div className="queue-section-value" style={{ color: getLatencyColor(dmpLatency?.averageLatencyMs || 0) }}>
-                {formatLatency(dmpLatency?.averageLatencyMs || 0)}
+              <div className="queue-section-value" style={{ color: getLatencyColor(dmpLatency?.averageLatencyMs || dmpMetrics?.averageLatencyMs || 0) }}>
+                {formatLatency(dmpLatency?.averageLatencyMs || dmpMetrics?.averageLatencyMs || 0)}
               </div>
               <div className="queue-section-label">Avg Latency</div>
             </div>
