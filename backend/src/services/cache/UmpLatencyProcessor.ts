@@ -48,28 +48,39 @@ export class UmpLatencyProcessor {
   }
 
   private processPendingEvents(): void {
-    // Process events in chronological order
-    while (this.upwardMessageStack.length > 0 && this.messageQueueStack.length > 0) {
-      const upwardEvent = this.upwardMessageStack[0];
-      const queueEvent = this.messageQueueStack[0];
+    // Wait until both stacks have at least 2 values
+    if (this.upwardMessageStack.length < 2 || this.messageQueueStack.length < 2) {
+      return;
+    }
 
-      // If upward message came first, calculate latency
-      if (upwardEvent.timestamp <= queueEvent.timestamp) {
-        const latencyMs = queueEvent.timestamp.getTime() - upwardEvent.timestamp.getTime();
-        this.emitLatency(latencyMs, queueEvent.blockNumber, queueEvent.timestamp);
-        
-        // Remove processed events
-        this.upwardMessageStack.shift();
-        this.messageQueueStack.shift();
-      } 
-      // If message queue processed came first (race condition), use default latency
-      else {
-        this.emitLatency(this.defaultLatencyMs, queueEvent.blockNumber, queueEvent.timestamp);
-        
-        // Remove the queue event but keep the upward message for potential future matching
-        this.messageQueueStack.shift();
-        this.upwardMessageStack.shift();
+    // Get the first upward event
+    const firstUpwardEvent = this.upwardMessageStack[0];
+    
+    // Check if any message processed event has the same timestamp as the first upward event
+    let matchedIndex = -1;
+    for (let i = 0; i < this.messageQueueStack.length; i++) {
+      if (this.messageQueueStack[i].timestamp.getTime() === firstUpwardEvent.timestamp.getTime()) {
+        matchedIndex = i;
+        break;
       }
+    }
+
+    if (matchedIndex !== -1) {
+      // Found a timestamp match, calculate latency
+      const matchedQueueEvent = this.messageQueueStack[matchedIndex];
+      const latencyMs = matchedQueueEvent.timestamp.getTime() - firstUpwardEvent.timestamp.getTime();
+      this.emitLatency(latencyMs, matchedQueueEvent.blockNumber, matchedQueueEvent.timestamp);
+      
+      // Remove the matched events
+      this.upwardMessageStack.shift();
+      this.messageQueueStack.splice(matchedIndex, 1);
+    } else {
+      // No exact timestamp match found, use default latency for the first queue event
+      const firstQueueEvent = this.messageQueueStack[0];
+      this.emitLatency(this.defaultLatencyMs, firstQueueEvent.blockNumber, firstQueueEvent.timestamp);
+      
+      // Remove the first queue event but keep the upward message for potential future matching
+      this.messageQueueStack.shift();
     }
   }
 
