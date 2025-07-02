@@ -128,8 +128,9 @@ const XcmMessageMetrics: React.FC = () => {
   // Get latency color based on value
   const getLatencyColor = (latencyMs: number) => {
     if (latencyMs < 5000) return 'var(--success)'; // < 5s = green
-    if (latencyMs < 15000) return 'var(--warning)'; // 5-15s = yellow
-    return 'var(--danger)'; // > 15s = red
+    if (latencyMs < 15000) return '#4CAF50'; // 5-15s = blue/green
+    if (latencyMs < 30000) return 'var(--warning)'; // 15-30s = yellow
+    return 'var(--danger)'; // > 30s = red
   };
 
   // Format bytes for display
