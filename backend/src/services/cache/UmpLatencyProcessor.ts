@@ -79,8 +79,9 @@ export class UmpLatencyProcessor {
       const firstQueueEvent = this.messageQueueStack[0];
       this.emitLatency(this.defaultLatencyMs, firstQueueEvent.blockNumber, firstQueueEvent.timestamp);
       
-      // Remove the first queue event but keep the upward message for potential future matching
+      // Remove both the first queue event and the first upward message since no match was found
       this.messageQueueStack.shift();
+      this.upwardMessageStack.shift();
     }
   }
 
