@@ -23,6 +23,7 @@ import { Log } from '../logging/Log';
 import { AbstractApi } from './abstractApi';
 import { eventService } from './eventService';
 import { UmpLatencyProcessor } from './cache/UmpLatencyProcessor';
+import { DmpLatencyProcessor } from './cache/DmpLatencyProcessor';
 
 export async function runRcFinalizedHeadsService() {
   const provider = new WsProvider(getConfig().relayChainUrl);
@@ -282,6 +283,7 @@ export async function runRcXcmMessageCounterService() {
 
 export async function runRcDmpDataMessageCountsService() {
   const api = await AbstractApi.getInstance().getRelayChainApi();
+  const dmpLatencyProcessor = DmpLatencyProcessor.getInstance();
 
   let previousQueueSize = 0;
 
@@ -308,21 +310,29 @@ export async function runRcDmpDataMessageCountsService() {
 
         // Only record if there's an actual change
         if (eventType !== 'no_change') {
+          const timestamp = new Date();
+          const blockNumber = header.number.toNumber();
+
           await db.insert(dmpQueueEvents).values({
             queueSize: currentQueueSize,
             totalSizeBytes,
             eventType,
-            blockNumber: header.number.toNumber(),
-            timestamp: new Date(),
+            blockNumber,
+            timestamp,
           });
+
+          // Add fill events to latency processor
+          if (eventType === 'fill') {
+            dmpLatencyProcessor.addFillMessageSent(blockNumber, timestamp);
+          }
 
           // Emit event for frontend
           eventService.emit('dmpQueueEvent', {
             queueSize: currentQueueSize,
             totalSizeBytes,
             eventType,
-            blockNumber: header.number.toNumber(),
-            timestamp: new Date().toISOString(),
+            blockNumber,
+            timestamp: timestamp.toISOString(),
           });
 
           Log.chainEvent({

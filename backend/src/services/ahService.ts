@@ -22,9 +22,11 @@ import { AbstractApi } from './abstractApi';
 import { DmpMetricsCache } from './cache/DmpMetricsCache';
 import { eventService } from './eventService';
 import { UmpLatencyProcessor } from './cache/UmpLatencyProcessor';
+import { DmpLatencyProcessor } from './cache/DmpLatencyProcessor';
 
 // Get shared instance of DMP metrics cache
 const dmpMetricsCacheInstance = DmpMetricsCache.getInstance();
+const dmpLatencyProcessor = DmpLatencyProcessor.getInstance();
 
 export const runAhHeadsService = async (): Promise<VoidFn> => {
   const provider = new WsProvider(getConfig().assetHubUrl);
@@ -250,28 +252,9 @@ export async function runAhEventsService() {
           }
           lastProcessedBlock = blockNumber;
 
-          // Before inserting to DB, calculate latency
-          const lastFillEvent = await db.query.dmpQueueEvents.findFirst({
-            where: eq(dmpQueueEvents.eventType, 'fill'),
-            orderBy: [desc(dmpQueueEvents.timestamp)],
-          });
-
-          let latencyMs = 0;
-          if (lastFillEvent && lastFillEvent.timestamp) {
-            const processingTimestamp = new Date();
-            latencyMs = processingTimestamp.getTime() - lastFillEvent.timestamp.getTime();
-          }
-
-          // Update cache with new latency
-          dmpMetricsCacheInstance.updateAverageLatency(latencyMs);
-
-          // Emit latency event with both current and average
-          eventService.emit('dmpLatency', {
-            latencyMs,
-            averageLatencyMs: dmpMetricsCacheInstance.getAverageLatencyMs(),
-            blockNumber,
-            timestamp: new Date().toISOString(),
-          });
+          // Add to DMP latency processor
+          const timestamp = new Date();
+          dmpLatencyProcessor.addMessageQueueProcessed(blockNumber, timestamp);
 
           // Save to database
           await db.insert(messageProcessingEventsAH).values({
@@ -285,7 +268,6 @@ export async function runAhEventsService() {
             blockNumber,
             details: {
               eventData: event.toJSON(),
-              latencyMs,
             },
           });
         } catch (error) {
