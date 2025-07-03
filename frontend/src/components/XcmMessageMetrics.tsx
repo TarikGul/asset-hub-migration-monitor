@@ -1,7 +1,30 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { Line } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  ChartOptions,
+} from 'chart.js';
 import { useEventSource } from '../hooks/useEventSource';
 import type { EventType } from '../hooks/useEventSource';
 import './XcmMessageMetrics.css';
+
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 interface XcmCounter {
   sourceChain: string;
@@ -68,6 +91,11 @@ const XcmMessageMetrics: React.FC = () => {
   const [umpQueueEvent, setUmpQueueEvent] = useState<UmpQueueEvent | null>(null);
   const [umpMetrics, setUmpMetrics] = useState<UmpMetrics | null>(null);
   const [dmpMetrics, setDmpMetrics] = useState<DmpMetrics | null>(null);
+  
+  // Historical data for charts
+  const [dmpLatencyHistory, setDmpLatencyHistory] = useState<DmpLatency[]>([]);
+  const [umpLatencyHistory, setUmpLatencyHistory] = useState<UmpLatency[]>([]);
+  const maxDataPoints = 30; // Keep last 30 data points
 
   // Subscribe to RC and AH XCM message counter events
   const { error: xcmError } = useEventSource(['rcXcmMessageCounter', 'ahXcmMessageCounter'], useCallback((eventType: EventType, data: XcmCounter) => {
@@ -82,15 +110,25 @@ const XcmMessageMetrics: React.FC = () => {
   const { error: dmpLatencyError } = useEventSource(['dmpLatency'], useCallback((eventType: EventType, data: DmpLatency) => {
     if (eventType === 'dmpLatency') {
       setDmpLatency(data);
+      // Add to historical data
+      setDmpLatencyHistory(prev => {
+        const newHistory = [...prev, data];
+        return newHistory.slice(-maxDataPoints);
+      });
     }
-  }, []));
+  }, [maxDataPoints]));
 
   // Subscribe to UMP latency events
   const { error: umpLatencyError } = useEventSource(['umpLatency'], useCallback((eventType: EventType, data: UmpLatency) => {
     if (eventType === 'umpLatency') {
       setUmpLatency(data);
+      // Add to historical data
+      setUmpLatencyHistory(prev => {
+        const newHistory = [...prev, data];
+        return newHistory.slice(-maxDataPoints);
+      });
     }
-  }, []));
+  }, [maxDataPoints]));
 
   // Subscribe to UMP metrics events
   const { error: umpMetricsError } = useEventSource(['umpMetrics'], useCallback((eventType: EventType, data: UmpMetrics) => {
@@ -180,6 +218,101 @@ const XcmMessageMetrics: React.FC = () => {
 
   const dmpStatus = getDmpStatus();
   const umpStatus = getUmpStatus();
+
+  // Prepare chart data
+  const chartMaxPoints = Math.max(dmpLatencyHistory.length, umpLatencyHistory.length);
+  const chartData = {
+    labels: chartMaxPoints > 0 ? Array.from({ length: chartMaxPoints }, (_, i) => i + 1) : [],
+    datasets: [
+      {
+        label: 'DMP Latency (ms)',
+        data: dmpLatencyHistory.map(d => d.latencyMs),
+        borderColor: 'rgb(75, 192, 192)',
+        backgroundColor: 'rgba(75, 192, 192, 0.1)',
+        borderWidth: 2,
+        fill: false,
+        tension: 0.1,
+        pointRadius: 3,
+        pointHoverRadius: 5,
+      },
+      {
+        label: 'UMP Latency (ms)',
+        data: umpLatencyHistory.map(d => d.latencyMs),
+        borderColor: 'rgb(255, 99, 132)',
+        backgroundColor: 'rgba(255, 99, 132, 0.1)',
+        borderWidth: 2,
+        fill: false,
+        tension: 0.1,
+        pointRadius: 3,
+        pointHoverRadius: 5,
+      },
+    ],
+  };
+
+  const chartOptions: ChartOptions<'line'> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+        labels: {
+          usePointStyle: true,
+          padding: 20,
+          font: {
+            size: 12,
+          },
+        },
+      },
+      title: {
+        display: true,
+        text: 'XCM Message Latency Over Time',
+        font: {
+          size: 14,
+          weight: 'bold',
+        },
+      },
+      tooltip: {
+        mode: 'index' as const,
+        intersect: false,
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        titleColor: 'white',
+        bodyColor: 'white',
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+        borderWidth: 1,
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: 'Latency (ms)',
+          font: {
+            size: 12,
+          },
+        },
+        grid: {
+          color: 'rgba(0, 0, 0, 0.1)',
+        },
+      },
+      x: {
+        title: {
+          display: true,
+          text: 'Data Points',
+          font: {
+            size: 12,
+          },
+        },
+        grid: {
+          color: 'rgba(0, 0, 0, 0.1)',
+        },
+      },
+    },
+    interaction: {
+      intersect: false,
+      mode: 'index' as const,
+    },
+  };
 
   return (
     <section className="card xcm-messages">
@@ -286,9 +419,14 @@ const XcmMessageMetrics: React.FC = () => {
       </div>
       
       <div className="chart-container">
-        <div className="chart-placeholder">
-          XCM Message Queue Depth & Throughput Graph
-        </div>
+        {dmpLatencyHistory.length > 0 || umpLatencyHistory.length > 0 ? (
+          <Line data={chartData} options={chartOptions} />
+        ) : (
+          <div className="chart-placeholder">
+            <p>Waiting for latency data...</p>
+            <p>DMP and UMP latency will appear here once events are received.</p>
+          </div>
+        )}
       </div>
     </section>
   );
