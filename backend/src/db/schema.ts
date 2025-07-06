@@ -7,6 +7,7 @@ export const migrationStages = sqliteTable('migration_stages', {
   chain: text('chain').notNull(), // 'asset-hub' or 'relay-chain'
   stage: text('stage').notNull(),
   details: text('details'), // JSON stringified details about the stage
+  scheduledBlockNumber: integer('scheduled_block_number'), // Only used for scheduled stages.
   blockNumber: integer('block_number').notNull(),
   blockHash: text('block_hash').notNull(),
   timestamp: integer('timestamp', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`),
@@ -23,18 +24,6 @@ export const xcmMessageCounters = sqliteTable('xcm_message_counters', {
   messagesSent: integer('messages_sent').notNull().default(0),
   messagesProcessed: integer('messages_processed').notNull().default(0),
   messagesFailed: integer('messages_failed').notNull().default(0),
-  lastUpdated: integer('last_updated', { mode: 'timestamp' })
-    .notNull()
-    .$defaultFn(() => new Date()),
-});
-
-// Balance Migration Counters
-export const balanceMigrationCounters = sqliteTable('balance_migration_counters', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  accountsMigrated: integer('accounts_migrated').notNull().default(0),
-  totalBalanceMigrated: integer('total_balance_migrated').notNull().default(0),
-  totalBalanceKept: integer('total_balance_kept').notNull().default(0),
-  failedMigrations: integer('failed_migrations').notNull().default(0),
   lastUpdated: integer('last_updated', { mode: 'timestamp' })
     .notNull()
     .$defaultFn(() => new Date()),

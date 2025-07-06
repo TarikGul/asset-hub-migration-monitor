@@ -24,40 +24,9 @@ import { eventService } from './eventService';
 import { UmpLatencyProcessor } from './cache/UmpLatencyProcessor';
 import { DmpLatencyProcessor } from './cache/DmpLatencyProcessor';
 
-// Get shared instance of DMP metrics cache
+// TODO: Should we be using this?
 const dmpMetricsCacheInstance = DmpMetricsCache.getInstance();
 const dmpLatencyProcessor = DmpLatencyProcessor.getInstance();
-
-export const runAhHeadsService = async (): Promise<VoidFn> => {
-  const provider = new WsProvider(getConfig().assetHubUrl);
-  const api = await ApiPromise.create({ provider });
-  Log.connection({
-    service: 'Asset Hub Heads',
-    status: 'connected',
-  });
-
-  const unsubscribe = await api.rpc.chain.subscribeFinalizedHeads(header => {
-    const blockNumber = header.number.toNumber();
-    const blockHash = header.hash.toString();
-
-    Log.chainEvent({
-      chain: 'asset-hub',
-      eventType: 'finalized head',
-      blockNumber,
-      blockHash,
-      details: { timestamp: new Date().toISOString() },
-    });
-
-    // Emit the head event through eventService
-    eventService.emit('ahHead', {
-      blockNumber,
-      blockHash,
-      timestamp: new Date().toISOString(),
-    });
-  });
-
-  return unsubscribe;
-};
 
 export async function runAhMigrationStageService() {
   const api = await AbstractApi.getInstance().getAssetHubApi();
@@ -200,21 +169,21 @@ export async function runAhXcmMessageCounterService() {
   return unsubscribeXcmMessages;
 }
 
-export async function runAhFinalizedHeadsService() {
+export async function runAhNewHeadsService() {
   const provider = new WsProvider(getConfig().assetHubUrl);
   const api = await ApiPromise.create({ provider });
   Log.connection({
-    service: 'Asset Hub Finalized Heads',
+    service: 'Asset Hub New Heads',
     status: 'connected',
   });
 
-  const unsubscribe = await api.rpc.chain.subscribeFinalizedHeads(header => {
+  const unsubscribe = await api.rpc.chain.subscribeNewHeads(header => {
     const blockNumber = header.number.toNumber();
     const blockHash = header.hash.toString();
 
     Log.chainEvent({
       chain: 'asset-hub',
-      eventType: 'finalized head',
+      eventType: 'new head',
       blockNumber,
       blockHash,
       details: { timestamp: new Date().toISOString() },

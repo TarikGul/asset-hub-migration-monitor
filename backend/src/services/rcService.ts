@@ -24,22 +24,35 @@ import { AbstractApi } from './abstractApi';
 import { eventService } from './eventService';
 import { UmpLatencyProcessor } from './cache/UmpLatencyProcessor';
 import { DmpLatencyProcessor } from './cache/DmpLatencyProcessor';
+import { SubscriptionManager } from '../util/SubscriptionManager';
 
-export async function runRcFinalizedHeadsService() {
+export async function runRcNewHeadsService() {
   const provider = new WsProvider(getConfig().relayChainUrl);
   const api = await ApiPromise.create({ provider });
   Log.connection({
-    service: 'Relay Chain Finalized Heads',
+    service: 'Relay Chain New Heads',
     status: 'connected',
   });
 
-  const unsubscribe = await api.rpc.chain.subscribeFinalizedHeads(header => {
+  const unsubscribe = await api.rpc.chain.subscribeNewHeads(header => {
     const blockNumber = header.number.toNumber();
     const blockHash = header.hash.toString();
 
+    const subManager = SubscriptionManager.getInstance();
+
+    if (
+      !subManager.allSubsInitialized &&
+      subManager.migrationStartBlockNumber && 
+      subManager.migrationStartBlockNumber - blockNumber === 3// Start 3 blocks early to ensure we don't miss any events.
+    ) {
+      subManager.initAllMigrationSubs();
+    } else if (subManager.migrationStarted && !subManager.allSubsInitialized) {
+      subManager.initAllMigrationSubs();
+    }
+
     Log.chainEvent({
       chain: 'relay-chain',
-      eventType: 'finalized head',
+      eventType: 'new head',
       blockNumber,
       blockHash,
       details: { timestamp: new Date().toISOString() },
@@ -56,52 +69,11 @@ export async function runRcFinalizedHeadsService() {
   return unsubscribe;
 }
 
-export const runRcHeadsService = async (scheduledBlockNumber?: number): Promise<VoidFn> => {
-  const provider = new WsProvider(getConfig().relayChainUrl);
-  const api = await ApiPromise.create({ provider });
-  Log.connection({
-    service: 'Relay Chain Heads',
-    status: 'connected',
-  });
-
-  const unsubscribe = await api.rpc.chain.subscribeFinalizedHeads(header => {
-    const blockNumber = header.number.toNumber();
-    const blockHash = header.hash.toString();
-
-    Log.chainEvent({
-      chain: 'relay-chain',
-      eventType: 'finalized head',
-      blockNumber,
-      blockHash,
-      details: { timestamp: new Date().toISOString() },
-    });
-
-    // Emit the head event through eventService
-    eventService.emit('rcHead', {
-      blockNumber,
-      blockHash,
-      timestamp: new Date().toISOString(),
-    });
-
-    if (scheduledBlockNumber && blockNumber >= scheduledBlockNumber) {
-      Log.service({
-        service: 'Relay Chain Heads',
-        action: 'Reached scheduled block',
-        details: { scheduledBlockNumber, currentBlock: blockNumber },
-      });
-      unsubscribe();
-    }
-  });
-
-  return unsubscribe;
-};
-
 export async function runRcMigrationStageService(): Promise<VoidFn> {
   const api = await AbstractApi.getInstance().getRelayChainApi();
 
   const unsubscribeMigrationStage = (await api.query.rcMigrator.rcMigrationStage(
     async (migrationStage: PalletRcMigratorMigrationStage) => {
-      let isMigrationScheduled = false;
       try {
         // TODO: Technically we want to confirm this is the block that has the proper migration stage in the events
         const header = await api.rpc.chain.getHeader();
@@ -110,34 +82,14 @@ export async function runRcMigrationStageService(): Promise<VoidFn> {
           stage: migrationStage.type,
           chain: 'relay-chain',
           details: JSON.stringify(migrationStage.toJSON()),
+          scheduledBlockNumber: migrationStage.isScheduled ? migrationStage.asScheduled.blockNumber.toNumber() : undefined,
           blockNumber: header.number.toNumber(),
           blockHash: header.hash.toHex(),
         });
 
-        // If we receive a Scheduled stage, emit an event with the block number
-        if (migrationStage.isScheduled && !isMigrationScheduled) {
-          const scheduledBlock = migrationStage.asScheduled.blockNumber;
-          eventService.emit('migrationScheduled', {
-            scheduledBlock,
-          });
-          isMigrationScheduled = true;
-          Log.service({
-            service: 'Migration Stage',
-            action: 'Migration scheduled',
-            details: { scheduledBlock: scheduledBlock.toNumber() },
-          });
-        }
-
-        if (!migrationStage.isPending) {
-          eventService.emit('migrationScheduled', {
-            skipAndStart: true,
-          });
-          isMigrationScheduled = true;
-          // TODO: Remove this once we have a way to detect if the migration has already started
-          Log.service({
-            service: 'Migration Stage',
-            action: 'Migration already started, enabling skip and start',
-          });
+        if (migrationStage.isScheduled) {
+          const subManager = SubscriptionManager.getInstance();
+          subManager.setMigrationBlockNumber(migrationStage.asScheduled.blockNumber.toNumber());
         }
 
         eventService.emit('rcStageUpdate', {
