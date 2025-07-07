@@ -21,9 +21,10 @@ RUN mkdir -p data
 # Build the application
 RUN yarn build
 
-# Initialize database schema and data
-RUN yarn migrate && yarn push
-
 ENV NODE_ENV=production
 
-CMD ["yarn", "start"] 
+# Copy startup script
+COPY start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
+CMD ["/app/start.sh"] 

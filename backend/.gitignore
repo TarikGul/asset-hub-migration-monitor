@@ -13,6 +13,7 @@ drizzle
 
 # SQLite Database
 sqlite.db
+data/sqlite.db
 
 # Logs
 /logs
