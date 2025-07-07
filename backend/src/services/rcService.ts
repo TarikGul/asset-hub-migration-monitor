@@ -24,6 +24,8 @@ import { AbstractApi } from './abstractApi';
 import { eventService } from './eventService';
 import { UmpLatencyProcessor } from './cache/UmpLatencyProcessor';
 import { DmpLatencyProcessor } from './cache/DmpLatencyProcessor';
+import { TimeInStageCache } from './cache/TimeInStageCache';
+import { getPalletFromStage } from '../util/stageToPalletMapping';
 import { SubscriptionManager } from '../util/SubscriptionManager';
 
 export async function runRcNewHeadsService() {
@@ -71,20 +73,24 @@ export async function runRcNewHeadsService() {
 
 export async function runRcMigrationStageService(): Promise<VoidFn> {
   const api = await AbstractApi.getInstance().getRelayChainApi();
+  const timeInStageCache = TimeInStageCache.getInstance();
 
   const unsubscribeMigrationStage = (await api.query.rcMigrator.rcMigrationStage(
     async (migrationStage: PalletRcMigratorMigrationStage) => {
       try {
         // TODO: Technically we want to confirm this is the block that has the proper migration stage in the events
         const header = await api.rpc.chain.getHeader();
+        const blockNumber = header.number.toNumber();
+        const blockHash = header.hash.toHex();
+        const currentStage = migrationStage.type;
 
         await db.insert(migrationStages).values({
-          stage: migrationStage.type,
+          stage: currentStage,
           chain: 'relay-chain',
           details: JSON.stringify(migrationStage.toJSON()),
           scheduledBlockNumber: migrationStage.isScheduled ? migrationStage.asScheduled.blockNumber.toNumber() : undefined,
-          blockNumber: header.number.toNumber(),
-          blockHash: header.hash.toHex(),
+          blockNumber,
+          blockHash,
         });
 
         if (migrationStage.isScheduled) {
@@ -92,21 +98,43 @@ export async function runRcMigrationStageService(): Promise<VoidFn> {
           subManager.setMigrationBlockNumber(migrationStage.asScheduled.blockNumber.toNumber());
         }
 
+        // Record stage start time if it's a new stage
+        const isNewStage = await timeInStageCache.recordStageStart(currentStage, blockNumber);
+        
+        // Get pallet name for this stage
+        const palletName = getPalletFromStage(currentStage);
+        
+        // Get current pallet info for the event
+        const palletInfo = palletName ? timeInStageCache.getCurrentPalletInfo(palletName) : null;
+
         eventService.emit('rcStageUpdate', {
-          stage: migrationStage.type,
+          stage: currentStage,
           chain: 'relay-chain',
           details: migrationStage.toJSON(),
-          blockNumber: header.number.toNumber(),
-          blockHash: header.hash.toHex(),
+          blockNumber,
+          blockHash,
           timestamp: new Date().toISOString(),
+          palletName: palletName || null,
+          palletInitStartedAt: palletInfo?.initStartedAt || null,
+          timeInPallet: palletInfo?.timeInPallet || null,
+          isNewStage,
+          isPalletCompleted: palletInfo?.isCompleted || false,
+          palletTotalDuration: palletInfo?.totalDuration || null,
+          currentPalletStage: palletInfo?.currentStage || null,
         });
 
         Log.chainEvent({
           chain: 'relay-chain',
           eventType: 'migration stage update',
-          blockNumber: header.number.toNumber(),
-          blockHash: header.hash.toHex(),
-          details: { stage: migrationStage.type },
+          blockNumber,
+          blockHash,
+          details: { 
+            stage: currentStage,
+            palletName,
+            isNewStage,
+            timeInPallet: palletInfo?.timeInPallet || null,
+            isPalletCompleted: palletInfo?.isCompleted || false,
+          },
         });
       } catch (error) {
         Log.chainEvent({

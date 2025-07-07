@@ -16,6 +16,19 @@ export const migrationStages = sqliteTable('migration_stages', {
 export type MigrationStage = typeof migrationStages.$inferSelect;
 export type NewMigrationStage = typeof migrationStages.$inferInsert;
 
+// Stage Start Times - tracks when each stage first started
+export const stageStartTimes = sqliteTable('stage_start_times', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  stage: text('stage').notNull().unique(), // Each stage can only have one start time
+  startedAt: integer('started_at', { mode: 'timestamp' }).notNull(),
+  endedAt: integer('ended_at', { mode: 'timestamp' }), // nullable - set when stage completes
+  blockNumber: integer('block_number').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`),
+});
+
+export type StageStartTime = typeof stageStartTimes.$inferSelect;
+export type NewStageStartTime = typeof stageStartTimes.$inferInsert;
+
 // XCM Message Counters
 export const xcmMessageCounters = sqliteTable('xcm_message_counters', {
   id: integer('id').primaryKey({ autoIncrement: true }),

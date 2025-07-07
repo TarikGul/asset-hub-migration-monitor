@@ -6,6 +6,8 @@ import { migrationStages, xcmMessageCounters } from '../db/schema';
 import { Log } from '../logging/Log';
 import { DmpMetricsCache } from '../services/cache/DmpMetricsCache';
 import { UmpMetricsCache } from '../services/cache/UmpMetricsCache';
+import { TimeInStageCache } from '../services/cache/TimeInStageCache';
+import { getPalletFromStage } from '../util/stageToPalletMapping';
 import { eventService } from '../services/eventService';
 
 const { logger } = Log;
@@ -103,12 +105,26 @@ export const updatesHandler: RequestHandler = async (req: Request, res: Response
         orderBy: [desc(migrationStages.timestamp)],
       });
       if (rcStage) {
+        // Get pallet name for this stage
+        const palletName = getPalletFromStage(rcStage.stage);
+        
+        // Get pallet timing information
+        const timeInStageCache = TimeInStageCache.getInstance();
+        const palletInfo = palletName ? timeInStageCache.getCurrentPalletInfo(palletName) : null;
+        
         sendEvent('rcStageUpdate', {
           stage: rcStage.stage,
           details: rcStage.details ? JSON.parse(rcStage.details) : null,
           blockNumber: rcStage.blockNumber,
           blockHash: rcStage.blockHash,
           timestamp: rcStage.timestamp,
+          palletName: palletName || null,
+          palletInitStartedAt: palletInfo?.initStartedAt || null,
+          timeInPallet: palletInfo?.timeInPallet || null,
+          isNewStage: false, // This is initial state, so not a new stage
+          isPalletCompleted: palletInfo?.isCompleted || false,
+          palletTotalDuration: palletInfo?.totalDuration || null,
+          currentPalletStage: palletInfo?.currentStage || null,
         });
       }
     }

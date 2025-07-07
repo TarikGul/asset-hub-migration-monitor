@@ -3,6 +3,7 @@ import { Log } from '../logging/Log';
 import { xcmMessageCounters, dmpMetricsCache } from './schema';
 
 import { db } from './index';
+import { TimeInStageCache } from '../services/cache/TimeInStageCache';
 
 export async function initializeDb() {
   try {
@@ -64,6 +65,14 @@ export async function initializeDb() {
         lastUpdated: new Date(),
       });
     }
+
+    // Initialize TimeInStageCache
+    Log.service({
+      service: 'Database Initialization',
+      action: 'Initializing TimeInStageCache',
+    });
+    const timeInStageCache = TimeInStageCache.getInstance();
+    await timeInStageCache.initialize();
 
     Log.service({
       service: 'Database Initialization',

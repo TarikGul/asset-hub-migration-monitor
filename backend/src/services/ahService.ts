@@ -4,7 +4,7 @@ import type { ITuple } from '@polkadot/types/types';
 
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { VoidFn } from '@polkadot/api/types';
-import { sql, eq, desc } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 import { getConfig } from '../config';
 import { db } from '../db';
@@ -12,20 +12,19 @@ import {
   xcmMessageCounters,
   migrationStages,
   messageProcessingEventsAH,
-  dmpQueueEvents,
   umpQueueEvents,
   upwardMessageSentEvents,
 } from '../db/schema';
 import { Log } from '../logging/Log';
 
 import { AbstractApi } from './abstractApi';
-import { DmpMetricsCache } from './cache/DmpMetricsCache';
 import { eventService } from './eventService';
 import { UmpLatencyProcessor } from './cache/UmpLatencyProcessor';
 import { DmpLatencyProcessor } from './cache/DmpLatencyProcessor';
 
-// TODO: Should we be using this?
-const dmpMetricsCacheInstance = DmpMetricsCache.getInstance();
+// TODO: Make sure events for xcm dmp are from fill in the dmp queue to message processed on ah.
+// Gotta put the baby to sleep ill do this when I am back.
+
 const dmpLatencyProcessor = DmpLatencyProcessor.getInstance();
 
 export async function runAhMigrationStageService() {
