@@ -44,6 +44,16 @@
   font-weight: 600;
 }
 
+.progress-explanation {
+  margin-bottom: 0.5rem;
+}
+
+.explanation-text {
+  font-size: 0.75rem;
+  color: var(--text-light);
+  font-style: italic;
+}
+
 /* Timeline */
 .timeline {
   display: flex;

@@ -102,6 +102,9 @@ const MigrationStatus: React.FC = () => {
           <span className="progress-label">Overall Progress</span>
           <span className="progress-value">{Math.round(progressPercentage)}%</span>
         </div>
+        <div className="progress-explanation">
+          <span className="explanation-text">(Percentage increases as migration stages complete)</span>
+        </div>
         <div className="progress-bar">
           <div className="progress-fill" style={{ width: `${progressPercentage}%` }}></div>
         </div>
