@@ -1,5 +1,6 @@
 import { eventService } from "../eventService";
 import { DmpMetricsCache } from "./DmpMetricsCache";
+import { Log } from "../../logging/Log";
 
 interface DmpEvent {
   timestamp: Date;
@@ -30,6 +31,9 @@ export class DmpLatencyProcessor {
       this.fillMessageStack.shift();
     }
 
+    // Clean up old fill events when new ones arrive
+    this.cleanupOldFillEvents();
+
     // Try to process any pending message queue events
     this.processPendingEvents();
   }
@@ -56,13 +60,54 @@ export class DmpLatencyProcessor {
     const firstFillEvent = this.fillMessageStack[0];
     const firstQueueEvent = this.messageQueueStack[0];
     
-    // Found a timestamp match, calculate latency
+    // Calculate latency
     const latencyMs = firstQueueEvent.timestamp.getTime() - firstFillEvent.timestamp.getTime();
-    this.emitLatency(latencyMs, firstQueueEvent.blockNumber, firstQueueEvent.timestamp);
+    
+    // Handle negative latency (queue event happened before fill event)
+    if (latencyMs < 0) {
+      Log.service({
+        service: 'DMP Latency Processor',
+        action: 'Negative latency detected, clearing messageQueue stack',
+        details: {
+          latencyMs,
+          fillEventTimestamp: firstFillEvent.timestamp.toISOString(),
+          queueEventTimestamp: firstQueueEvent.timestamp.toISOString(),
+          fillEventBlockNumber: firstFillEvent.blockNumber,
+          queueEventBlockNumber: firstQueueEvent.blockNumber,
+        },
+      });
+      // Clear the messageQueue stack and wait for the next messageQueue processed event
+      this.messageQueueStack.shift();
+      return;
+    } else {
+      this.emitLatency(latencyMs, firstQueueEvent.blockNumber, firstQueueEvent.timestamp);
+    }
     
     // Remove the matched events
     this.fillMessageStack.shift();
     this.messageQueueStack.shift();
+  }
+
+  // Clean up old fill events when new ones arrive
+  // This handles the case where multiple fills happen before any processing
+  private cleanupOldFillEvents(): void {
+    // If we have multiple fill events, keep only the latest one
+    // This is because a single messageQueue processed event might consume multiple fill events
+    if (this.fillMessageStack.length > 1) {
+      const oldCount = this.fillMessageStack.length - 1;
+      const latestFillEvent = this.fillMessageStack[this.fillMessageStack.length - 1];
+      this.fillMessageStack = [latestFillEvent];
+      
+      Log.service({
+        service: 'DMP Latency Processor',
+        action: 'Cleaned up old fill events',
+        details: {
+          oldCount,
+          latestTimestamp: latestFillEvent.timestamp.toISOString(),
+          latestBlockNumber: latestFillEvent.blockNumber,
+        },
+      });
+    }
   }
 
   private emitLatency(latencyMs: number, blockNumber: number, timestamp: Date): void {
