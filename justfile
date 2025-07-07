@@ -14,6 +14,10 @@ db:
     #!/usr/bin/env bash
     cd backend && yarn migrate && yarn push && cd ..
 
+db-clean:
+    #!/usr/bin/env bash
+    cd backend && rm -rf sqlite.db && yarn migrate && yarn push && cd ..
+
 # Build both frontend and backend
 build:
     #!/usr/bin/env bash
@@ -50,5 +54,13 @@ run:
     #!/usr/bin/env bash
     just install
     just db
+    just build
+    just dev
+
+# Setup everything and run in development mode, clean database first
+run-clean:
+    #!/usr/bin/env bash
+    just install
+    just db-clean
     just build
     just dev

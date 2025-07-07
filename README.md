@@ -35,6 +35,13 @@ cd asset-hub-migration-monitor
 just run
 ```
 
+or
+
+Install dependencies and start the application with a clean db:
+```bash
+just run-clean
+```
+
 This command will:
 - Install all dependencies for both frontend and backend
 - Build both frontend and backend
@@ -170,3 +177,4 @@ ports:
 - `just dev` - Run both frontend and backend in development mode
 - `just clean` - Clean build artifacts
 - `just run` - Setup everything and run in development mode
+- `just run-clean` - Setup everything with clean database and run in development mode
