@@ -194,12 +194,12 @@ const PerPalletMigrationStatus: React.FC = () => {
                   <td>
                     <div className="progress-bar">
                       <div 
-                        className="progress-fill" 
-                        style={{ width: `${progressPercentage}%` }}
+                        className={`progress-fill ${status?.status === 'active' ? 'loading' : ''}`}
+                        style={{ width: status?.status === 'active' ? '100%' : '0%' }}
                       ></div>
                     </div>
                   </td>
-                  <td>0 / 0</td>
+                  <td>Coming Soon</td>
                   <td>
                     {status && (
                       <PalletTimer

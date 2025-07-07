@@ -112,6 +112,22 @@ tbody tr:hover {
   background-color: var(--primary);
   border-radius: 4px;
   width: 0%;
+  transition: width 0.3s ease;
+}
+
+.progress-fill.loading {
+  background: linear-gradient(90deg, var(--primary) 0%, #ffffff 50%, var(--primary) 100%);
+  background-size: 200% 100%;
+  animation: loading-shimmer 1.5s infinite;
+}
+
+@keyframes loading-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 /* Pagination */
