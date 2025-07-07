@@ -72,14 +72,30 @@ tbody tr:hover {
   color: var(--text-light);
 }
 
-.badge-ongoing {
-  background-color: #fff5e0;
-  color: #b78105;
+.badge-active {
+  background-color: #e3f2fd;
+  color: #1976d2;
 }
 
 .badge-completed {
   background-color: #e3f9e5;
   color: #18794e;
+}
+
+.badge-ongoing {
+  background-color: #fff5e0;
+  color: #b78105;
+}
+
+/* Timer states */
+.active-time {
+  color: #1976d2;
+  font-weight: 500;
+}
+
+.completed-time {
+  color: #18794e;
+  font-weight: 500;
 }
 
 /* Progress bar */

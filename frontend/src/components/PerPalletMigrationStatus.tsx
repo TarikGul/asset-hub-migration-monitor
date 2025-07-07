@@ -1,16 +1,137 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useEventSource } from '../hooks/useEventSource';
 import { MIGRATION_PALLETS } from '../constants/migrationPallets';
 import './PerPalletMigrationStatus.css';
 
 const PALLETS_PER_PAGE = 6;
 
+interface PalletStatus {
+  palletName: string;
+  status: 'pending' | 'active' | 'completed';
+  currentStage: string | null;
+  timeInPallet: number | null;
+  totalDuration: number | null;
+  isCompleted: boolean;
+  palletInitStartedAt: string | null;
+  lastUpdated: number;
+}
+
+// Timer component for real-time updates
+const PalletTimer: React.FC<{ 
+  startTime: string | null; 
+  isCompleted: boolean; 
+  totalDuration: number | null;
+  timeInPallet: number | null;
+}> = ({ startTime, isCompleted, totalDuration, timeInPallet }) => {
+  const [currentTime, setCurrentTime] = useState(Date.now());
+
+  useEffect(() => {
+    if (isCompleted || !startTime) return;
+
+    const interval = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isCompleted, startTime]);
+
+  const formatDuration = (milliseconds: number): string => {
+    const hours = Math.floor(milliseconds / (1000 * 60 * 60));
+    const minutes = Math.floor((milliseconds % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((milliseconds % (1000 * 60)) / 1000);
+
+    if (hours > 0) {
+      return `${hours}h ${minutes}m ${seconds}s`;
+    } else if (minutes > 0) {
+      return `${minutes}m ${seconds}s`;
+    } else {
+      return `${seconds}s`;
+    }
+  };
+
+  if (!startTime) {
+    return <span>-</span>;
+  }
+
+  if (isCompleted && totalDuration) {
+    return <span className="completed-time">{formatDuration(totalDuration)}</span>;
+  }
+
+  if (timeInPallet) {
+    return <span className="active-time">{formatDuration(timeInPallet)}</span>;
+  }
+
+  return <span>-</span>;
+};
+
 const PerPalletMigrationStatus: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(0);
+  const [palletStatuses, setPalletStatuses] = useState<Map<string, PalletStatus>>(new Map());
   
   const totalPages = Math.ceil(MIGRATION_PALLETS.length / PALLETS_PER_PAGE);
   const startIndex = currentPage * PALLETS_PER_PAGE;
   const endIndex = startIndex + PALLETS_PER_PAGE;
   const visiblePallets = MIGRATION_PALLETS.slice(startIndex, endIndex);
+
+  // Initialize pallet statuses
+  useEffect(() => {
+    const initialStatuses = new Map<string, PalletStatus>();
+    MIGRATION_PALLETS.forEach(pallet => {
+      initialStatuses.set(pallet, {
+        palletName: pallet,
+        status: 'pending',
+        currentStage: null,
+        timeInPallet: null,
+        totalDuration: null,
+        isCompleted: false,
+        palletInitStartedAt: null,
+        lastUpdated: Date.now(),
+      });
+    });
+    setPalletStatuses(initialStatuses);
+  }, []);
+
+  // Subscribe to rcStageUpdate events
+  const handleStageUpdate = useCallback((eventType: string, data: any) => {
+    if (eventType === 'rcStageUpdate' && data.palletName) {
+      setPalletStatuses(prev => {
+        const newStatuses = new Map(prev);
+        const existing = newStatuses.get(data.palletName) || {
+          palletName: data.palletName,
+          status: 'pending',
+          currentStage: null,
+          timeInPallet: null,
+          totalDuration: null,
+          isCompleted: false,
+          palletInitStartedAt: null,
+          lastUpdated: Date.now(),
+        };
+
+        // Determine status based on completion and current stage
+        let status: 'pending' | 'active' | 'completed' = 'pending';
+        if (data.isPalletCompleted) {
+          status = 'completed';
+        } else if (data.palletInitStartedAt) {
+          status = 'active';
+        }
+
+        newStatuses.set(data.palletName, {
+          ...existing,
+          status,
+          currentStage: data.currentPalletStage || data.stage,
+          timeInPallet: data.timeInPallet,
+          totalDuration: data.palletTotalDuration,
+          isCompleted: data.isPalletCompleted,
+          palletInitStartedAt: data.palletInitStartedAt,
+          lastUpdated: Date.now(),
+        });
+
+        return newStatuses;
+      });
+    }
+  }, []);
+
+  useEventSource(['rcStageUpdate'], handleStageUpdate);
 
   const handlePreviousPage = () => {
     setCurrentPage(prev => Math.max(0, prev - 1));
@@ -20,20 +141,33 @@ const PerPalletMigrationStatus: React.FC = () => {
     setCurrentPage(prev => Math.min(totalPages - 1, prev + 1));
   };
 
+  const getStatusBadge = (status: 'pending' | 'active' | 'completed') => {
+    switch (status) {
+      case 'active':
+        return <span className="badge badge-active">Active</span>;
+      case 'completed':
+        return <span className="badge badge-completed">Completed</span>;
+      default:
+        return <span className="badge badge-pending">Pending</span>;
+    }
+  };
+
+  const getProgressPercentage = (status: 'pending' | 'active' | 'completed') => {
+    switch (status) {
+      case 'completed':
+        return 100;
+      case 'active':
+        return 50; // Could be more sophisticated based on current stage
+      default:
+        return 0;
+    }
+  };
+
   return (
     <section className="card pallet-status">
       <div className="card-header">
         <h2 className="card-title">Per-Pallet Migration Status</h2>
         <div className="card-actions">
-          <div className="search-box">
-            <span className="search-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M15.5 15.5L20 20" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                <path d="M10 17C13.866 17 17 13.866 17 10C17 6.13401 13.866 3 10 3C6.13401 3 3 6.13401 3 10C3 13.866 6.13401 17 10 17Z" stroke="currentColor" strokeWidth="2"/>
-              </svg>
-            </span>
-            <input type="text" className="search-input" placeholder="Search pallets..." />
-          </div>
         </div>
       </div>
       
@@ -49,19 +183,36 @@ const PerPalletMigrationStatus: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {visiblePallets.map((pallet) => (
-              <tr key={pallet}>
-                <td>{pallet}</td>
-                <td><span className="badge badge-pending">Pending</span></td>
-                <td>
-                  <div className="progress-bar">
-                    <div className="progress-fill" style={{ width: '0%' }}></div>
-                  </div>
-                </td>
-                <td>0 / 0</td>
-                <td>-</td>
-              </tr>
-            ))}
+            {visiblePallets.map((pallet) => {
+              const status = palletStatuses.get(pallet);
+              const progressPercentage = status ? getProgressPercentage(status.status) : 0;
+              
+              return (
+                <tr key={pallet}>
+                  <td>{pallet}</td>
+                  <td>{status ? getStatusBadge(status.status) : <span className="badge badge-pending">Pending</span>}</td>
+                  <td>
+                    <div className="progress-bar">
+                      <div 
+                        className="progress-fill" 
+                        style={{ width: `${progressPercentage}%` }}
+                      ></div>
+                    </div>
+                  </td>
+                  <td>0 / 0</td>
+                  <td>
+                    {status && (
+                      <PalletTimer
+                        startTime={status.currentStage ? status.palletInitStartedAt : null}
+                        isCompleted={status.isCompleted}
+                        totalDuration={status.totalDuration}
+                        timeInPallet={status.timeInPallet}
+                      />
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
