@@ -79,6 +79,7 @@ const MigrationStatus: React.FC = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [rcLastUpdate, setRcLastUpdate] = useState<Date | null>(null);
   const [ahLastUpdate, setAhLastUpdate] = useState<Date | null>(null);
+  const [xcmErrorCount, setXcmErrorCount] = useState<number>(0);
   
   // Check if we're on mobile
   useEffect(() => {
@@ -127,6 +128,13 @@ const MigrationStatus: React.FC = () => {
     setAhLastUpdate(new Date()); // Reset AH timer
   }, []));
 
+  // Subscribe to XCM message counters to track errors
+  useEventSource(['rcXcmMessageCounter', 'ahXcmMessageCounter'], useCallback((_eventType: EventType, data: any) => {
+    if (data.messagesFailed !== undefined) {
+      setXcmErrorCount(data.messagesFailed);
+    }
+  }, []));
+
   // Calculate which pallets to show in the carousel
   const getVisiblePallets = () => {
     const currentIndex = MIGRATION_PALLETS.findIndex(pallet => 
@@ -147,6 +155,28 @@ const MigrationStatus: React.FC = () => {
 
   const visiblePallets = getVisiblePallets();
   const progressPercentage = completedPallets.length / MIGRATION_PALLETS.length * 100;
+
+  // Get XCM status based on error count
+  const getXcmStatus = () => {
+    if (xcmErrorCount === 0) {
+      return {
+        dotClass: 'dot-green',
+        text: 'No XCM errors found'
+      };
+    } else if (xcmErrorCount === 1) {
+      return {
+        dotClass: 'dot-yellow',
+        text: '1 XCM error found'
+      };
+    } else {
+      return {
+        dotClass: 'dot-red',
+        text: `${xcmErrorCount} XCM errors found`
+      };
+    }
+  };
+
+  const xcmStatus = getXcmStatus();
 
   return (
     <section className="card migration-status">
@@ -206,9 +236,12 @@ const MigrationStatus: React.FC = () => {
               <div className="indicator-dot dot-green"></div>
               <span className="indicator-label">Overall Status</span>
             </div>
-            <div className="health-indicator">
-              <div className="indicator-dot dot-yellow"></div>
-              <span className="indicator-label">XCM Messages</span>
+            <div className="xcm-messages-group">
+              <span className="xcm-messages-label">XCM Messages</span>
+              <div className="xcm-messages-status">
+                <div className={`indicator-dot ${xcmStatus.dotClass}`}></div>
+                <span className="xcm-status-text">{xcmStatus.text}</span>
+              </div>
             </div>
             <div className="last-updated-group">
               <span className="last-updated-label">Last Updated:</span>
