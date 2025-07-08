@@ -147,6 +147,37 @@
   font-weight: 500;
 }
 
+/* Overall Status group */
+.overall-status-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem;
+  background-color: var(--light-bg);
+  border-radius: 6px;
+  flex: 1;
+}
+
+.overall-status-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text);
+  text-align: center;
+}
+
+.overall-status-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.overall-status-text {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
 /* XCM Messages group */
 .xcm-messages-group {
   display: flex;

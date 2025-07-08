@@ -66,7 +66,7 @@ const LiveTimer: React.FC<{ lastUpdate: Date | null; chain: string; dotColor: st
   
   return (
     <span className="timer-group">
-      <div className={`indicator-dot ${dotColor}`}></div>
+      <div className={`indicator-dot ${getTimerClass() === 'timer-never' ? dotColor : getTimerClass() === 'timer-danger' ? 'dot-red' : getTimerClass() === 'timer-warning' ? 'dot-yellow' : 'dot-green'}`}></div>
       <span className="timer-chain">{chain}</span>
       <span className={`timer ${getTimerClass()}`}>{getDisplayText()}</span>
     </span>
@@ -178,6 +178,31 @@ const MigrationStatus: React.FC = () => {
 
   const xcmStatus = getXcmStatus();
 
+  // Get overall status based on connection health
+  const getOverallStatus = () => {
+    const rcElapsed = rcLastUpdate ? Math.floor((Date.now() - rcLastUpdate.getTime()) / 1000) : 999;
+    const ahElapsed = ahLastUpdate ? Math.floor((Date.now() - ahLastUpdate.getTime()) / 1000) : 999;
+    
+    if (rcElapsed > 60 && ahElapsed > 60) {
+      return {
+        dotClass: 'dot-red',
+        text: 'Connection issues'
+      };
+    } else if (rcElapsed > 30 || ahElapsed > 30) {
+      return {
+        dotClass: 'dot-yellow',
+        text: 'One chain delayed'
+      };
+    } else {
+      return {
+        dotClass: 'dot-green',
+        text: 'Both chains connected'
+      };
+    }
+  };
+
+  const overallStatus = getOverallStatus();
+
   return (
     <section className="card migration-status">
       <div className="card-header">
@@ -232,9 +257,12 @@ const MigrationStatus: React.FC = () => {
           </div>
           
           <div className="health-indicators">
-            <div className="health-indicator">
-              <div className="indicator-dot dot-green"></div>
-              <span className="indicator-label">Overall Status</span>
+            <div className="overall-status-group">
+              <span className="overall-status-label">Overall Status</span>
+              <div className="overall-status-status">
+                <div className={`indicator-dot ${overallStatus.dotClass}`}></div>
+                <span className="overall-status-text">{overallStatus.text}</span>
+              </div>
             </div>
             <div className="xcm-messages-group">
               <span className="xcm-messages-label">XCM Messages</span>
