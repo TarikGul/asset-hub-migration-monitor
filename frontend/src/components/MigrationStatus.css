@@ -147,6 +147,85 @@
   font-weight: 500;
 }
 
+/* Last updated group */
+.last-updated-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem;
+  background-color: var(--light-bg);
+  border-radius: 6px;
+  flex: 1;
+}
+
+.last-updated-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text);
+  text-align: center;
+}
+
+.last-updated-timers {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  position: relative;
+}
+
+.timer-group {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.timer-separator {
+  color: var(--border);
+  font-weight: 500;
+  margin: 0 0.25rem;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.timer-chain {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+/* Timer styles */
+.timer {
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: auto;
+}
+
+.timer-normal {
+  color: var(--success);
+}
+
+.timer-warning {
+  color: var(--warning);
+}
+
+.timer-danger {
+  color: var(--danger);
+}
+
+.timer-never {
+  color: var(--text-light);
+}
+
+/* Chain-specific dot colors */
+.dot-rc {
+  background-color: #E6007A; /* Polkadot Relay Chain pink */
+}
+
+.dot-ah {
+  background-color: #46c93a; /* Asset Hub green */
+}
+
 /* Mobile Responsive Styles */
 @media (max-width: 768px) {
   .migration-status {
