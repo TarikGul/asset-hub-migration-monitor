@@ -61,6 +61,22 @@ function App() {
         <PerPalletMigrationStatus />
         <XcmMessageMetrics />
       </main>
+      <footer className="app-footer">
+        <div className="footer-content">
+          <div className="footer-links">
+            <a href="https://t.me/+CjOtzipvBHllMWYy" target="_blank" rel="noopener noreferrer" className="footer-link">
+              Reach Out To Support
+            </a>
+            <span className="footer-separator">•</span>
+            <a href="https://forum.polkadot.network/t/asset-hub-migration-2025/11129/53" target="_blank" rel="noopener noreferrer" className="footer-link">
+              About
+            </a>
+          </div>
+          <div className="footer-copyright">
+            © 2025 Parity Technologies
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
