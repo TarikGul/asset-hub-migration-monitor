@@ -321,6 +321,36 @@
   .progress-value {
     font-size: 0.8rem;
   }
+
+  .health-indicators {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .overall-status-group,
+  .xcm-messages-group,
+  .last-updated-group {
+    padding: 0.5rem;
+  }
+
+  .overall-status-label,
+  .xcm-messages-label,
+  .last-updated-label {
+    font-size: 0.65rem;
+  }
+
+  .overall-status-text,
+  .xcm-status-text {
+    font-size: 0.65rem;
+  }
+
+  .timer {
+    font-size: 0.7rem;
+  }
+
+  .timer-chain {
+    font-size: 0.7rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -339,5 +369,30 @@
   .progress-label,
   .progress-value {
     font-size: 0.75rem;
+  }
+
+  .overall-status-group,
+  .xcm-messages-group,
+  .last-updated-group {
+    padding: 0.375rem;
+  }
+
+  .overall-status-label,
+  .xcm-messages-label,
+  .last-updated-label {
+    font-size: 0.6rem;
+  }
+
+  .overall-status-text,
+  .xcm-status-text {
+    font-size: 0.6rem;
+  }
+
+  .timer {
+    font-size: 0.65rem;
+  }
+
+  .timer-chain {
+    font-size: 0.65rem;
   }
 } 

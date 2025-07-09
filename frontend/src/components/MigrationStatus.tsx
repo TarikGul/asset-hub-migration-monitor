@@ -244,57 +244,56 @@ const MigrationStatus: React.FC = () => {
         </div>
       </div>
       
-      {/* Only show timeline and health indicators on desktop/tablet */}
+      {/* Timeline - only show on desktop/tablet */}
       {!isMobile && (
-        <>
-          <div className="timeline">
-            {visiblePallets.map((pallet, index) => {
-              const isCompleted = completedPallets.includes(pallet);
-              const isCurrent = currentStage?.stage.toLowerCase().includes(pallet.toLowerCase());
-              
-              return (
-                <div key={pallet} className="timeline-point">
-                  <div className={`point-marker ${isCompleted ? 'completed' : isCurrent ? 'ongoing' : ''}`}></div>
-                  <div className="point-label">{pallet}</div>
-                </div>
-              );
-            })}
-          </div>
-          
-          <div className="health-indicators">
-            <div className="overall-status-group">
-              <span className="overall-status-label">Overall Status</span>
-              <div className="overall-status-status">
-                <div className={`indicator-dot ${overallStatus.dotClass}`}></div>
-                <span className="overall-status-text">{overallStatus.text}</span>
+        <div className="timeline">
+          {visiblePallets.map((pallet, index) => {
+            const isCompleted = completedPallets.includes(pallet);
+            const isCurrent = currentStage?.stage.toLowerCase().includes(pallet.toLowerCase());
+            
+            return (
+              <div key={pallet} className="timeline-point">
+                <div className={`point-marker ${isCompleted ? 'completed' : isCurrent ? 'ongoing' : ''}`}></div>
+                <div className="point-label">{pallet}</div>
               </div>
-            </div>
-            <div className="xcm-messages-group">
-              <span className="xcm-messages-label">XCM Messages</span>
-              <div className="xcm-messages-status">
-                <div className={`indicator-dot ${xcmStatus.dotClass}`}></div>
-                <span className="xcm-status-text">{xcmStatus.text}</span>
-              </div>
-            </div>
-            <div className="last-updated-group">
-              <span className="last-updated-label">Last Updated:</span>
-              <div className="last-updated-timers">
-                <LiveTimer 
-                  lastUpdate={rcLastUpdate} 
-                  chain="RC" 
-                  dotColor="dot-rc" 
-                />
-                <span className="timer-separator">|</span>
-                <LiveTimer 
-                  lastUpdate={ahLastUpdate} 
-                  chain="AH" 
-                  dotColor="dot-ah" 
-                />
-              </div>
-            </div>
-          </div>
-        </>
+            );
+          })}
+        </div>
       )}
+      
+      {/* Health indicators - show on all screen sizes */}
+      <div className="health-indicators">
+        <div className="overall-status-group">
+          <span className="overall-status-label">Overall Status</span>
+          <div className="overall-status-status">
+            <div className={`indicator-dot ${overallStatus.dotClass}`}></div>
+            <span className="overall-status-text">{overallStatus.text}</span>
+          </div>
+        </div>
+        <div className="xcm-messages-group">
+          <span className="xcm-messages-label">XCM Messages</span>
+          <div className="xcm-messages-status">
+            <div className={`indicator-dot ${xcmStatus.dotClass}`}></div>
+            <span className="xcm-status-text">{xcmStatus.text}</span>
+          </div>
+        </div>
+        <div className="last-updated-group">
+          <span className="last-updated-label">Last Updated:</span>
+          <div className="last-updated-timers">
+            <LiveTimer 
+              lastUpdate={rcLastUpdate} 
+              chain="RC" 
+              dotColor="dot-ah" 
+            />
+            <span className="timer-separator">|</span>
+            <LiveTimer 
+              lastUpdate={ahLastUpdate} 
+              chain="AH" 
+              dotColor="dot-ah" 
+            />
+          </div>
+        </div>
+      </div>
     </section>
   );
 };
