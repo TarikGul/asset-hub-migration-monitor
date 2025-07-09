@@ -44,11 +44,17 @@ const LiveTimer: React.FC<{ lastUpdate: Date | null; chain: string; dotColor: st
   }, [lastUpdate]);
   
   const formatTime = (seconds: number): string => {
-    if (seconds < 60) return `${seconds}s`;
-    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+    if (seconds < 60) {
+      return `00:${seconds.toString().padStart(2, '0')}`;
+    }
+    if (seconds < 3600) {
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = seconds % 60;
+      return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+    }
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
-    return `${hours}h ${minutes}m`;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
   };
   
   const getTimerClass = () => {
@@ -59,8 +65,7 @@ const LiveTimer: React.FC<{ lastUpdate: Date | null; chain: string; dotColor: st
   };
   
   const getDisplayText = () => {
-    if (!lastUpdate) return 'Never';
-    if (elapsed === 0) return 'Just now';
+    if (!lastUpdate) return '00:00';
     return formatTime(elapsed);
   };
   
