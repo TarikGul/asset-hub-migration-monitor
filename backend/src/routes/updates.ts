@@ -7,6 +7,7 @@ import { Log } from '../logging/Log';
 import { DmpMetricsCache } from '../services/cache/DmpMetricsCache';
 import { UmpMetricsCache } from '../services/cache/UmpMetricsCache';
 import { TimeInStageCache } from '../services/cache/TimeInStageCache';
+import { PalletMigrationCache } from '../services/cache/PalletMigrationCache';
 import { getPalletFromStage } from '../util/stageToPalletMapping';
 import { eventService } from '../services/eventService';
 
@@ -21,7 +22,9 @@ type EventType =
   | 'rcStageUpdate'
   | 'ahStageUpdate'
   | 'dmpMetrics'
-  | 'umpMetrics';
+  | 'umpMetrics'
+  | 'palletMigrationUpdate'
+  | 'palletMigrationSummary';
 
 export const updatesHandler: RequestHandler = async (req: Request, res: Response) => {
   const requestedEvents = ((req.query.events as string) || '')
@@ -159,7 +162,7 @@ export const updatesHandler: RequestHandler = async (req: Request, res: Response
       });
     }
 
-    // Handle DMP metrics initial state
+    // Handle UMP metrics initial state
     if (requestedEvents.includes('umpMetrics')) {
       const umpMetricsCacheInstance = UmpMetricsCache.getInstance();
       const currentMetrics = umpMetricsCacheInstance.getMetrics();
@@ -169,6 +172,16 @@ export const updatesHandler: RequestHandler = async (req: Request, res: Response
         lastUpdated: currentMetrics.lastUpdated,
         latencyCount: currentMetrics.latencyCount,
         sizeCount: currentMetrics.sizeCount,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Handle pallet migration summary initial state
+    if (requestedEvents.includes('palletMigrationSummary')) {
+      const palletMigrationCacheInstance = PalletMigrationCache.getInstance();
+      const summary = palletMigrationCacheInstance.getSummary();
+      sendEvent('palletMigrationSummary', {
+        ...summary,
         timestamp: new Date().toISOString(),
       });
     }

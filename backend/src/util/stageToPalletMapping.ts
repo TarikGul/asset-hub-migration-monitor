@@ -15,6 +15,7 @@ export const STAGE_TO_PALLET_MAP: Record<string, string> = {
   
   // Proxy stages
   'ProxyMigrationInit': 'Proxy',
+  'ProxyMigrationOngoing': 'Proxy',
   'ProxyMigrationProxies': 'Proxy',
   'ProxyMigrationAnnouncements': 'Proxy',
   'ProxyMigrationDone': 'Proxy',
@@ -91,9 +92,49 @@ export const STAGE_TO_PALLET_MAP: Record<string, string> = {
   'StakingMigrationDone': 'Staking',
 };
 
+// Reverse mapping from pallet names to stage names
+export const PALLET_TO_STAGE_MAP: Record<string, string[]> = {
+  'Balances': ['AccountsMigrationInit', 'AccountsMigrationOngoing', 'AccountsMigrationDone'],
+  'Accounts': ['AccountsMigrationInit', 'AccountsMigrationOngoing', 'AccountsMigrationDone'],
+  'Multisig': ['MultisigMigrationInit', 'MultisigMigrationOngoing', 'MultisigMigrationDone'],
+  'Claims': ['ClaimsMigrationDone'],
+  'Proxy': ['ProxyMigrationInit', 'ProxyMigrationOngoing', 'ProxyMigrationProxies', 'ProxyMigrationAnnouncements', 'ProxyMigrationDone'],
+  'Preimage': ['PreimageMigrationInit', 'PreimageMigrationChunksOngoing', 'PreimageMigrationChunksDone', 'PreimageMigrationRequestStatusOngoing', 'PreimageMigrationRequestStatusDone', 'PreimageMigrationLegacyRequestStatusInit', 'PreimageMigrationLegacyRequestStatusOngoing', 'PreimageMigrationLegacyRequestStatusDone', 'PreimageMigrationDone'],
+  'NomPools': ['NomPoolsMigrationInit', 'NomPoolsMigrationOngoing', 'NomPoolsMigrationDone'],
+  'Vesting': ['VestingMigrationInit', 'VestingMigrationOngoing', 'VestingMigrationDone'],
+  'FastUnstake': ['FastUnstakeMigrationInit', 'FastUnstakeMigrationOngoing', 'FastUnstakeMigrationDone'],
+  'Indices': ['IndicesMigrationInit', 'IndicesMigrationOngoing', 'IndicesMigrationDone'],
+  'Referenda': ['ReferendaMigrationInit', 'ReferendaMigrationOngoing', 'ReferendaMigrationDone'],
+  'BagsList': ['BagsListMigrationInit', 'BagsListMigrationOngoing', 'BagsListMigrationDone'],
+  'Scheduler': ['SchedulerMigrationInit', 'SchedulerMigrationOngoing', 'SchedulerAgendaMigrationOngoing', 'SchedulerMigrationDone'],
+  'ConvictionVoting': ['ConvictionVotingMigrationInit', 'ConvictionVotingMigrationOngoing', 'ConvictionVotingMigrationDone'],
+  'Bounties': ['BountiesMigrationDone'],
+  'AssetRate': ['AssetRateMigrationInit', 'AssetRateMigrationOngoing', 'AssetRateMigrationDone'],
+  'Crowdloan': ['CrowdloanMigrationDone'],
+  'Treasury': ['TreasuryMigrationDone'],
+  'Staking': ['StakingMigrationInit', 'StakingMigrationOngoing', 'StakingMigrationDone'],
+};
+
 // Helper function to get pallet name from stage
 export function getPalletFromStage(stage: string): string | null {
   return STAGE_TO_PALLET_MAP[stage] || null;
+}
+
+// Helper function to get stage names from pallet name
+export function getStagesFromPallet(pallet: string): string[] {
+  return PALLET_TO_STAGE_MAP[pallet] || [];
+}
+
+// Helper function to get the current active stage for a pallet
+export function getCurrentStageForPallet(pallet: string): string | null {
+  const stages = getStagesFromPallet(pallet);
+  if (stages.length === 0) return null;
+  
+  // Return the first ongoing stage, or the last stage if no ongoing stages
+  const ongoingStage = stages.find(stage => stage.includes('Ongoing'));
+  if (ongoingStage) return ongoingStage;
+  
+  return stages[stages.length - 1];
 }
 
 // Helper function to check if a stage is an Init stage

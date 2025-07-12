@@ -4,7 +4,7 @@ import type { ITuple } from '@polkadot/types/types';
 
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { VoidFn } from '@polkadot/api/types';
-import { eq } from 'drizzle-orm';
+import { eq, desc, and } from 'drizzle-orm';
 
 import { getConfig } from '../config';
 import { db } from '../db';
@@ -14,6 +14,7 @@ import {
   messageProcessingEventsAH,
   umpQueueEvents,
   upwardMessageSentEvents,
+  palletMigrationCounters,
 } from '../db/schema';
 import { Log } from '../logging/Log';
 
@@ -21,6 +22,8 @@ import { AbstractApi } from './abstractApi';
 import { eventService } from './eventService';
 import { UmpLatencyProcessor } from './cache/UmpLatencyProcessor';
 import { DmpLatencyProcessor } from './cache/DmpLatencyProcessor';
+import { PalletMigrationCache } from './cache/PalletMigrationCache';
+import { getCurrentStageForPallet } from '../util/stageToPalletMapping';
 
 // TODO: Make sure events for xcm dmp are from fill in the dmp queue to message processed on ah.
 // Gotta put the baby to sleep ill do this when I am back.
@@ -282,7 +285,109 @@ export async function runAhEventsService() {
           });
         }
       }
+
+      if (event.section === 'ahMigrator' && event.method === 'BatchProcessed') {
+        // Batch processed data goes like this:
+        // [Pallet, items processed, items failed]
+        try {
+          const palletName = event.data[0].toString(); // This is the pallet.
+          const itemsProcessed = parseInt(event.data[1].toString()); // This is the items processed.
+          const itemsFailed = parseInt(event.data[2].toString()); // This is the items failed.
+
+
+          // Handle the special case where "Balances" pallet refers to "Accounts" stage
+          const targetPallet = palletName === 'Balances' ? 'Accounts' : palletName;
+          
+          // Get the current stage for this pallet
+          
+          const currentStageName = getCurrentStageForPallet(targetPallet);
+          
+          if (!currentStageName) {
+            Log.chainEvent({
+              chain: 'asset-hub',
+              eventType: 'BatchProcessed - unknown pallet',
+              details: { palletName, targetPallet },
+            });
+            continue;
+          }
+
+          // Get the current stage record from the database
+          const currentStage = await db.query.migrationStages.findFirst({
+            where: eq(migrationStages.stage, currentStageName),
+            orderBy: [desc(migrationStages.timestamp)],
+          });
+
+          if (!currentStage) {
+            Log.chainEvent({
+              chain: 'asset-hub',
+              eventType: 'BatchProcessed - stage not found',
+              details: { palletName, targetPallet, currentStageName },
+            });
+            continue;
+          }
+
+          // Check if we already have a counter for this pallet and stage
+          const existingCounter = await db.query.palletMigrationCounters.findFirst({
+            where: and(
+              eq(palletMigrationCounters.palletName, targetPallet),
+              eq(palletMigrationCounters.stageId, currentStage.id)
+            ),
+          });
+
+          if (existingCounter) {
+            // Update existing counter
+            await db
+              .update(palletMigrationCounters)
+              .set({
+                itemsProcessed: existingCounter.itemsProcessed + itemsProcessed,
+                failedItems: existingCounter.failedItems + itemsFailed,
+                lastUpdated: new Date(),
+              })
+              .where(eq(palletMigrationCounters.id, existingCounter.id));
+          } else {
+            // Create new counter
+            await db.insert(palletMigrationCounters).values({
+              palletName: targetPallet,
+              stageId: currentStage.id,
+              itemsProcessed,
+              totalItems: 0, // We don't know the total yet
+              failedItems: itemsFailed,
+              lastUpdated: new Date(),
+            });
+          }
+
+          // Add to pallet migration cache for event emission
+          const palletMigrationCache = PalletMigrationCache.getInstance();
+          palletMigrationCache.addBatchData(targetPallet, itemsProcessed, itemsFailed);
+
+          Log.chainEvent({
+            chain: 'asset-hub',
+            eventType: 'BatchProcessed',
+            details: {
+              palletName,
+              targetPallet,
+              currentStageName,
+              itemsProcessed,
+              itemsFailed,
+              stageId: currentStage.id,
+            },
+          });
+        } catch (error) {
+          Log.chainEvent({
+            chain: 'asset-hub',
+            eventType: 'BatchProcessed processing error',
+            error: error as Error,
+            details: {
+              eventData: event.toJSON(),
+            },
+          });
+        }
+      }
     }
+
+    // Emit pallet migration events after processing all events in this block
+    const palletMigrationCache = PalletMigrationCache.getInstance();
+    palletMigrationCache.emitEvents();
   });
 
   return unsubscribe;
