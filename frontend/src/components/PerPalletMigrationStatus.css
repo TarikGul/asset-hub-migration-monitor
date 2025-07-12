@@ -130,6 +130,28 @@ tbody tr:hover {
   }
 }
 
+/* Items processed/failed ratio display */
+.items-ratio {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.items-processed {
+  font-weight: 500;
+  color: #18794e; /* Green color for processed items */
+}
+
+.separator {
+  color: var(--text-light);
+  font-weight: 400;
+}
+
+.items-failed {
+  font-weight: 500;
+  color: #d32f2f; /* Red color for failed items */
+}
+
 /* Pagination */
 .pagination {
   display: flex;

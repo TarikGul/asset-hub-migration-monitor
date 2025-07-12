@@ -14,6 +14,8 @@ interface PalletStatus {
   isCompleted: boolean;
   palletInitStartedAt: string | null;
   lastUpdated: number;
+  itemsProcessed?: number;
+  itemsFailed?: number;
 }
 
 // Timer component for real-time updates
@@ -131,7 +133,54 @@ const PerPalletMigrationStatus: React.FC = () => {
     }
   }, []);
 
+  // Subscribe to pallet migration updates
+  const handlePalletMigrationUpdate = useCallback((eventType: string, data: any) => {
+    if (eventType === 'palletMigrationUpdate') {
+      setPalletStatuses(prev => {
+        const newStatuses = new Map(prev);
+        const existing = newStatuses.get(data.palletName);
+        
+        if (existing) {
+          newStatuses.set(data.palletName, {
+            ...existing,
+            itemsProcessed: data.totalItemsProcessed,
+            itemsFailed: data.totalItemsFailed,
+            lastUpdated: Date.now(),
+          });
+        }
+        
+        return newStatuses;
+      });
+    }
+  }, []);
+
+  // Subscribe to pallet migration summary for initial state
+  const handlePalletMigrationSummary = useCallback((eventType: string, data: any) => {
+    if (eventType === 'palletMigrationSummary') {
+      setPalletStatuses(prev => {
+        const newStatuses = new Map(prev);
+        
+        // Update each pallet with its migration data
+        data.pallets.forEach((pallet: any) => {
+          const existing = newStatuses.get(pallet.palletName);
+          if (existing) {
+            newStatuses.set(pallet.palletName, {
+              ...existing,
+              itemsProcessed: pallet.totalItemsProcessed,
+              itemsFailed: pallet.totalItemsFailed,
+              lastUpdated: Date.now(),
+            });
+          }
+        });
+        
+        return newStatuses;
+      });
+    }
+  }, []);
+
   useEventSource(['rcStageUpdate'], handleStageUpdate);
+  useEventSource(['palletMigrationUpdate'], handlePalletMigrationUpdate);
+  useEventSource(['palletMigrationSummary'], handlePalletMigrationSummary);
 
   const handlePreviousPage = () => {
     setCurrentPage(prev => Math.max(0, prev - 1));
@@ -178,7 +227,7 @@ const PerPalletMigrationStatus: React.FC = () => {
               <th>Pallet Name</th>
               <th>Status</th>
               <th>Progress</th>
-              <th>Items Processed</th>
+              <th>Items Processed / Failed</th>
               <th>Time in Stage</th>
             </tr>
           </thead>
@@ -199,7 +248,21 @@ const PerPalletMigrationStatus: React.FC = () => {
                       ></div>
                     </div>
                   </td>
-                  <td>Coming Soon</td>
+                  <td>
+                    {status?.itemsProcessed !== undefined ? (
+                      <div className="items-ratio">
+                        <span className="items-processed">
+                          {status.itemsProcessed.toLocaleString()}
+                        </span>
+                        <span className="separator"> / </span>
+                        <span className="items-failed">
+                          {status.itemsFailed !== undefined ? status.itemsFailed.toLocaleString() : '0'}
+                        </span>
+                      </div>
+                    ) : (
+                      <span>-</span>
+                    )}
+                  </td>
                   <td>
                     {status && (
                       <PalletTimer
