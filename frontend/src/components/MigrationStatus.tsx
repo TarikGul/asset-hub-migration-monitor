@@ -13,7 +13,6 @@ type AhEventType = 'ahHead' | 'ahXcmMessageCounter' | 'ahStageUpdate' | 'dmpLate
 interface MigrationStage {
   stage: string;
   details: any;
-  blockNumber: number;
   blockHash: string;
   timestamp: string;
 }
@@ -225,7 +224,7 @@ const MigrationStatus: React.FC = () => {
           {currentStage 
             ? currentStage.stage === 'MigrationDone'
               ? 'Migration completed successfully! All pallets have been migrated.'
-              : `Currently migrating ${currentStage.stage} at block #${currentStage.blockNumber}`
+              : `Currently migrating ${currentStage.stage}`
             : 'Waiting for migration status updates'
           }
         </div>
