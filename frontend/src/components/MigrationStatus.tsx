@@ -224,6 +224,10 @@ const MigrationStatus: React.FC = () => {
           {currentStage 
             ? currentStage.stage === 'MigrationDone'
               ? 'Migration completed successfully! All pallets have been migrated.'
+              : currentStage.stage === 'Pending'
+              ? 'Currently Pending'
+              : currentStage.stage === 'Scheduled' && currentStage.details?.scheduledBlockNumber
+              ? `Scheduled at block ${currentStage.details.scheduledBlockNumber}`
               : `Currently migrating ${currentStage.stage}`
             : 'Waiting for migration status updates'
           }

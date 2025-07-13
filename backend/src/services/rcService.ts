@@ -108,6 +108,7 @@ export async function runRcMigrationStageService(): Promise<VoidFn> {
           details: migrationStage.toJSON(),
           timestamp: new Date().toISOString(),
           palletName: palletName || null,
+          scheduledBlockNumber: migrationStage.isScheduled ? migrationStage.asScheduled.blockNumber.toNumber() : null,
           palletInitStartedAt: palletInfo?.initStartedAt || null,
           timeInPallet: palletInfo?.timeInPallet || null,
           isNewStage,
