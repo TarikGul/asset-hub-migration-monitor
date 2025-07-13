@@ -35,7 +35,7 @@ export class SubscriptionManager {
 
         const latestMigrationStage = await db.query.migrationStages.findFirst({
             where: eq(migrationStages.chain, 'relay-chain'),
-            orderBy: desc(migrationStages.blockNumber),
+            orderBy: desc(migrationStages.timestamp),
         });
 
         if (latestMigrationStage) {

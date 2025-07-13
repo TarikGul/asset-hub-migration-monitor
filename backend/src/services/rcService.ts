@@ -79,9 +79,6 @@ export async function runRcMigrationStageService(): Promise<VoidFn> {
     async (migrationStage: PalletRcMigratorMigrationStage) => {
       try {
         // TODO: Technically we want to confirm this is the block that has the proper migration stage in the events
-        const header = await api.rpc.chain.getHeader();
-        const blockNumber = header.number.toNumber();
-        const blockHash = header.hash.toHex();
         const currentStage = migrationStage.type;
 
         await db.insert(migrationStages).values({
@@ -89,8 +86,6 @@ export async function runRcMigrationStageService(): Promise<VoidFn> {
           chain: 'relay-chain',
           details: JSON.stringify(migrationStage.toJSON()),
           scheduledBlockNumber: migrationStage.isScheduled ? migrationStage.asScheduled.blockNumber.toNumber() : undefined,
-          blockNumber,
-          blockHash,
         });
 
         if (migrationStage.isScheduled) {
@@ -99,7 +94,7 @@ export async function runRcMigrationStageService(): Promise<VoidFn> {
         }
 
         // Record stage start time if it's a new stage
-        const isNewStage = await timeInStageCache.recordStageStart(currentStage, blockNumber);
+        const isNewStage = await timeInStageCache.recordStageStart(currentStage);
         
         // Get pallet name for this stage
         const palletName = getPalletFromStage(currentStage);
@@ -111,8 +106,6 @@ export async function runRcMigrationStageService(): Promise<VoidFn> {
           stage: currentStage,
           chain: 'relay-chain',
           details: migrationStage.toJSON(),
-          blockNumber,
-          blockHash,
           timestamp: new Date().toISOString(),
           palletName: palletName || null,
           palletInitStartedAt: palletInfo?.initStartedAt || null,
@@ -126,8 +119,6 @@ export async function runRcMigrationStageService(): Promise<VoidFn> {
         Log.chainEvent({
           chain: 'relay-chain',
           eventType: 'migration stage update',
-          blockNumber,
-          blockHash,
           details: { 
             stage: currentStage,
             palletName,
@@ -272,7 +263,6 @@ export async function runRcDmpDataMessageCountsService() {
     async (messages: Vec<PolkadotCorePrimitivesInboundDownwardMessage>) => {
       try {
         const currentQueueSize = messages.length;
-        const header = await api.rpc.chain.getHeader();
 
         // Calculate exact total size in bytes by summing encoded lengths
         let totalSizeBytes = 0;
@@ -291,19 +281,17 @@ export async function runRcDmpDataMessageCountsService() {
         // Only record if there's an actual change
         if (eventType !== 'no_change') {
           const timestamp = new Date();
-          const blockNumber = header.number.toNumber();
 
           await db.insert(dmpQueueEvents).values({
             queueSize: currentQueueSize,
             totalSizeBytes,
             eventType,
-            blockNumber,
             timestamp,
           });
 
           // Add fill events to latency processor
           if (eventType === 'fill') {
-            dmpLatencyProcessor.addFillMessageSent(blockNumber, timestamp);
+            dmpLatencyProcessor.addFillMessageSent(timestamp);
           }
 
           // Emit event for frontend
@@ -311,15 +299,12 @@ export async function runRcDmpDataMessageCountsService() {
             queueSize: currentQueueSize,
             totalSizeBytes,
             eventType,
-            blockNumber,
             timestamp: timestamp.toISOString(),
           });
 
           Log.chainEvent({
             chain: 'relay-chain',
             eventType: `DMP queue ${eventType}`,
-            blockNumber: header.number.toNumber(),
-            blockHash: header.hash.toString(),
             details: {
               queueSize: currentQueueSize,
               totalSizeBytes,
@@ -352,23 +337,19 @@ export async function runRcMessageQueueProcessedService() {
       const { event } = record;
       if (event.section === 'messageQueue' && event.method === 'Processed') {
         try {
-          const header = await api.rpc.chain.getHeader();
-          const blockNumber = header.number.toNumber();
           const timestamp = new Date();
 
           // Save to database
           await db.insert(messageProcessingEventsRC).values({
-            blockNumber,
             timestamp,
           });
 
           // Add to latency processor
-          umpLatencyProcessor.addMessageQueueProcessed(blockNumber, timestamp);
+          umpLatencyProcessor.addMessageQueueProcessed(timestamp);
 
           Log.chainEvent({
             chain: 'relay-chain',
             eventType: 'MessageQueue.Processed',
-            blockNumber,
             details: {
               eventData: event.toJSON(),
             },
