@@ -2,6 +2,7 @@ import { db } from '../../db';
 import { stageStartTimes, type NewStageStartTime } from '../../db/schema';
 import { eq } from 'drizzle-orm';
 import { getPalletFromStage, isInitStage, isDoneStage } from '../../util/stageToPalletMapping';
+import { Log } from '../../logging/Log';
 
 interface PalletTimeInfo {
   palletName: string;
@@ -38,10 +39,17 @@ export class TimeInStageCache {
       // Build pallet timing from stage data
       this.buildPalletTimingFromStages();
       
-      console.log(`TimeInStageCache: Loaded ${startTimes.length} stage start times from database`);
-      console.log(`TimeInStageCache: Built timing for ${this.palletTiming.size} pallets`);
+      Log.service({
+        service: 'TimeInStageCache',
+        action: 'Initialized successfully',
+        details: { stageCount: this.stageStartTimes.size, palletCount: this.palletTiming.size },
+      });
     } catch (error) {
-      console.error('TimeInStageCache: Error initializing from database:', error);
+      Log.service({
+        service: 'TimeInStageCache',
+        action: 'Initialization error',
+        error: error as Error,
+      });
     }
   }
 
@@ -80,7 +88,7 @@ export class TimeInStageCache {
   }
 
   // Record a new stage start time
-  public async recordStageStart(stage: string, blockNumber: number): Promise<boolean> {
+  public async recordStageStart(stage: string): Promise<boolean> {
     try {
       // Check if stage already exists in cache
       if (this.stageStartTimes.has(stage)) {
@@ -93,7 +101,6 @@ export class TimeInStageCache {
       await db.insert(stageStartTimes).values({
         stage,
         startedAt: timestamp,
-        blockNumber,
       });
 
       // Update cache
@@ -102,10 +109,19 @@ export class TimeInStageCache {
       // Update pallet timing
       this.updatePalletTiming(stage, timestamp);
       
-      console.log(`TimeInStageCache: Recorded start time for stage "${stage}" at ${timestamp.toISOString()}`);
+      Log.service({
+        service: 'TimeInStageCache',
+        action: 'Recorded stage start time',
+        details: { stage, timestamp: timestamp.toISOString() },
+      });
       return true;
     } catch (error) {
-      console.error(`TimeInStageCache: Error recording stage start for "${stage}":`, error);
+      Log.service({
+        service: 'TimeInStageCache',
+        action: 'Error recording stage start',
+        details: { stage },
+        error: error as Error,
+      });
       return false;
     }
   }
