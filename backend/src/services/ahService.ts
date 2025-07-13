@@ -25,9 +25,6 @@ import { DmpLatencyProcessor } from './cache/DmpLatencyProcessor';
 import { PalletMigrationCache } from './cache/PalletMigrationCache';
 import { getCurrentStageForPallet } from '../util/stageToPalletMapping';
 
-// TODO: Make sure events for xcm dmp are from fill in the dmp queue to message processed on ah.
-// Gotta put the baby to sleep ill do this when I am back.
-
 const dmpLatencyProcessor = DmpLatencyProcessor.getInstance();
 
 export async function runAhMigrationStageService() {
@@ -36,30 +33,23 @@ export async function runAhMigrationStageService() {
   const unsubscribeMigrationStage = (await api.query.ahMigrator.ahMigrationStage(
     async (migrationStage: any) => {
       try {
-        const header = await api.rpc.chain.getHeader();
 
         await db.insert(migrationStages).values({
           chain: 'asset-hub',
           stage: migrationStage.type,
           details: JSON.stringify(migrationStage.toJSON()),
-          blockNumber: header.number.toNumber(),
-          blockHash: header.hash.toHex(),
         });
 
         eventService.emit('ahStageUpdate', {
           chain: 'asset-hub',
           stage: migrationStage.type,
           details: migrationStage.toJSON(),
-          blockNumber: header.number.toNumber(),
-          blockHash: header.hash.toHex(),
           timestamp: new Date().toISOString(),
         });
 
         Log.chainEvent({
           chain: 'asset-hub',
           eventType: 'migration stage update',
-          blockNumber: header.number.toNumber(),
-          blockHash: header.hash.toHex(),
           details: { stage: migrationStage.type },
         });
       } catch (error) {
@@ -73,34 +63,6 @@ export async function runAhMigrationStageService() {
   )) as unknown as VoidFn;
 
   return unsubscribeMigrationStage;
-}
-
-export async function findXcmMessages(api: ApiPromise, block: Block) {
-  let upwardMessageSent = 0;
-  let downwardMessagesReceived = 0;
-  let downwardMessagesProcessed = 0;
-
-  const apiAt = await api.at(block.hash);
-  const events = await apiAt.query.system.events();
-
-  for (const record of events) {
-    const { event } = record;
-    if (event.section === 'parachainSystem' && event.method === 'UpwardMessageSent') {
-      upwardMessageSent++;
-    }
-    if (event.section === 'parachainSystem' && event.method === 'DownwardMessagesReceived') {
-      downwardMessagesReceived += Number(event.data[0].toString());
-    }
-    if (event.section === 'parachainSystem' && event.method === 'DownwardMessagesProcessed') {
-      downwardMessagesProcessed += downwardMessagesReceived;
-      downwardMessagesReceived = 0;
-    }
-  }
-
-  return {
-    upwardMessageSent,
-    downwardMessagesProcessed,
-  };
 }
 
 async function updateXcmMessageCountersViaStorage(erroredOnAh: number) {
@@ -201,42 +163,34 @@ export async function runAhNewHeadsService() {
 
   return unsubscribe;
 }
-// TODO: This service should also be aggregating events for the pre-pallet statuses.
-// We need to ensure that it checks for messageQueue first to ensure we get as accurate latency reports as possible.
-// This means we need to store and organize all the events locally, send them to some function to batch all the events to the db.
+
 export async function runAhEventsService() {
   const api = await AbstractApi.getInstance().getAssetHubApi();
   let lastProcessedBlock = 0; // Track the last block we processed
 
   const unsubscribe = await api.query.system.events(async events => {
+    let foundMessageQueueProcessed = false;
     for (const record of events) {
       const { event } = record;
       if (event.section === 'messageQueue' && event.method === 'Processed') {
         try {
-          // Get current block information
-          const header = await api.rpc.chain.getHeader();
-          const blockNumber = header.number.toNumber();
-
-          // Only process if this is a new block (avoid duplicate processing in same block)
-          if (blockNumber <= lastProcessedBlock) {
+          if (foundMessageQueueProcessed) {
             continue;
+          } else  {
+            foundMessageQueueProcessed = true;
           }
-          lastProcessedBlock = blockNumber;
 
           // Add to DMP latency processor
           const timestamp = new Date();
-          dmpLatencyProcessor.addMessageQueueProcessed(blockNumber, timestamp);
+          dmpLatencyProcessor.addMessageQueueProcessed(timestamp);
 
-          // Save to database
           await db.insert(messageProcessingEventsAH).values({
-            blockNumber,
             timestamp: new Date(),
           });
 
           Log.chainEvent({
             chain: 'asset-hub',
             eventType: 'MessageQueue.Processed',
-            blockNumber,
             details: {
               eventData: event.toJSON(),
             },
@@ -252,18 +206,15 @@ export async function runAhEventsService() {
 
       if (event.section === 'parachainSystem' && event.method === 'UpwardMessageSent') {
         try {
-          const header = await api.rpc.chain.getHeader();
-          const blockNumber = header.number.toNumber();
           const timestamp = new Date();
 
           await db.insert(upwardMessageSentEvents).values({
-            blockNumber,
             timestamp,
           });
 
           // Add to latency processor
           const umpLatencyProcessor = UmpLatencyProcessor.getInstance();
-          umpLatencyProcessor.addUpwardMessageSent(blockNumber, timestamp);
+          umpLatencyProcessor.addUpwardMessageSent(timestamp);
 
           eventService.emit('upwardMessageSent', {
             timestamp: timestamp.toISOString(),
@@ -272,7 +223,6 @@ export async function runAhEventsService() {
           Log.chainEvent({
             chain: 'asset-hub',
             eventType: 'UpwardMessageSent',
-            blockNumber,
             details: {
               eventData: event.toJSON(),
             },
@@ -405,27 +355,22 @@ export async function runAhUmpPendingMessagesService() {
           totalSizeBytes += messageSize;
         }
 
-        const header = await api.rpc.chain.getHeader();
-        const blockNumber = header.number.toNumber();
-
         await db.insert(umpQueueEvents).values({
           queueSize: messages.length,
           totalSizeBytes,
-          blockNumber,
           timestamp: new Date(),
         });
 
         eventService.emit('umpQueueEvent', {
           queueSize: messages.length,
           totalSizeBytes,
-          blockNumber,
           timestamp: new Date().toISOString(),
         });
 
         Log.service({
           service: 'Asset Hub UMP',
           action: 'UMP queue event recorded',
-          details: { queueSize: messages.length, totalSizeBytes, blockNumber },
+          details: { queueSize: messages.length, totalSizeBytes },
         });
       } catch (error) {
         Log.service({

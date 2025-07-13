@@ -8,8 +8,6 @@ export const migrationStages = sqliteTable('migration_stages', {
   stage: text('stage').notNull(),
   details: text('details'), // JSON stringified details about the stage
   scheduledBlockNumber: integer('scheduled_block_number'), // Only used for scheduled stages.
-  blockNumber: integer('block_number').notNull(),
-  blockHash: text('block_hash').notNull(),
   timestamp: integer('timestamp', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`),
 });
 
@@ -22,7 +20,6 @@ export const stageStartTimes = sqliteTable('stage_start_times', {
   stage: text('stage').notNull().unique(), // Each stage can only have one start time
   startedAt: integer('started_at', { mode: 'timestamp' }).notNull(),
   endedAt: integer('ended_at', { mode: 'timestamp' }), // nullable - set when stage completes
-  blockNumber: integer('block_number').notNull(),
   createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`),
 });
 
@@ -76,7 +73,6 @@ export const dmpQueueEvents = sqliteTable('dmp_queue_events', {
   queueSize: integer('queue_size').notNull(), // Number of messages in queue
   totalSizeBytes: integer('total_size_bytes').notNull().default(0), // Total size in bytes
   eventType: text('event_type').notNull(), // 'fill', 'drain', 'partial_drain'
-  blockNumber: integer('block_number').notNull(),
   timestamp: integer('timestamp', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`),
 });
 
@@ -85,28 +81,24 @@ export const umpQueueEvents = sqliteTable('ump_queue_events', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   queueSize: integer('queue_size').notNull(), // Number of messages in queue
   totalSizeBytes: integer('total_size_bytes').notNull().default(0), // Total size in bytes
-  blockNumber: integer('block_number').notNull(),
   timestamp: integer('timestamp', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`),
 });
 
 // Message Processing Events (from Asset Hub)
 export const messageProcessingEventsRC = sqliteTable('message_processing_events_rc', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  blockNumber: integer('block_number').notNull(),
   timestamp: integer('timestamp', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`),
 });
 
 // Message Processing Events (from Asset Hub)
 export const messageProcessingEventsAH = sqliteTable('message_processing_events', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  blockNumber: integer('block_number').notNull(),
   timestamp: integer('timestamp', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`),
 });
 
 // Upward Message Sent Events (from Asset Hub)
 export const upwardMessageSentEvents = sqliteTable('upward_message_sent_events', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  blockNumber: integer('block_number').notNull(),
   timestamp: integer('timestamp', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`),
 });
 

@@ -118,12 +118,11 @@ export const updatesHandler: RequestHandler = async (req: Request, res: Response
         sendEvent('rcStageUpdate', {
           stage: rcStage.stage,
           details: rcStage.details ? JSON.parse(rcStage.details) : null,
-          blockNumber: rcStage.blockNumber,
-          blockHash: rcStage.blockHash,
           timestamp: rcStage.timestamp,
           palletName: palletName || null,
           palletInitStartedAt: palletInfo?.initStartedAt || null,
           timeInPallet: palletInfo?.timeInPallet || null,
+          scheduledBlockNumber: rcStage.scheduledBlockNumber || null,
           isNewStage: false, // This is initial state, so not a new stage
           isPalletCompleted: palletInfo?.isCompleted || false,
           palletTotalDuration: palletInfo?.totalDuration || null,
@@ -141,8 +140,6 @@ export const updatesHandler: RequestHandler = async (req: Request, res: Response
         sendEvent('ahStageUpdate', {
           stage: ahStage.stage,
           details: ahStage.details ? JSON.parse(ahStage.details) : null,
-          blockNumber: ahStage.blockNumber,
-          blockHash: ahStage.blockHash,
           timestamp: ahStage.timestamp,
         });
       }

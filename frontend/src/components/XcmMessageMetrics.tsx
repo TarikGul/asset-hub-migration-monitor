@@ -38,14 +38,12 @@ interface XcmCounter {
 interface DmpLatency {
   latencyMs: number;
   averageLatencyMs: number;
-  blockNumber: number;
   timestamp: string;
 }
 
 interface UmpLatency {
   latencyMs: number;
   averageLatencyMs: number;
-  blockNumber: number;
   timestamp: string;
 }
 
@@ -53,14 +51,12 @@ interface DmpQueueEvent {
   queueSize: number;
   totalSizeBytes: number;
   eventType: string;
-  blockNumber: number;
   timestamp: string;
 }
 
 interface UmpQueueEvent {
   queueSize: number;
   totalSizeBytes: number;
-  blockNumber: number;
   timestamp: string;
 }
 
