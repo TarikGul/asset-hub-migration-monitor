@@ -25,9 +25,6 @@ import { DmpLatencyProcessor } from './cache/DmpLatencyProcessor';
 import { PalletMigrationCache } from './cache/PalletMigrationCache';
 import { getCurrentStageForPallet } from '../util/stageToPalletMapping';
 
-// TODO: Make sure events for xcm dmp are from fill in the dmp queue to message processed on ah.
-// Gotta put the baby to sleep ill do this when I am back.
-
 const dmpLatencyProcessor = DmpLatencyProcessor.getInstance();
 
 export async function runAhMigrationStageService() {
@@ -166,9 +163,7 @@ export async function runAhNewHeadsService() {
 
   return unsubscribe;
 }
-// TODO: This service should also be aggregating events for the pre-pallet statuses.
-// We need to ensure that it checks for messageQueue first to ensure we get as accurate latency reports as possible.
-// This means we need to store and organize all the events locally, send them to some function to batch all the events to the db.
+
 export async function runAhEventsService() {
   const api = await AbstractApi.getInstance().getAssetHubApi();
   let lastProcessedBlock = 0; // Track the last block we processed
