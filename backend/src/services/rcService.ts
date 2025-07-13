@@ -126,6 +126,7 @@ export async function runRcMigrationStageService(): Promise<VoidFn> {
             isNewStage,
             timeInPallet: palletInfo?.timeInPallet || null,
             isPalletCompleted: palletInfo?.isCompleted || false,
+            scheduledBlockNumber: migrationStage.isScheduled ? migrationStage.asScheduled.blockNumber.toNumber() : null,
           },
         });
       } catch (error) {

@@ -4,17 +4,12 @@ import type { EventType } from '../hooks/useEventSource';
 import { MIGRATION_PALLETS } from '../constants/migrationPallets';
 import './MigrationStatus.css';
 
-// RC-specific event types
-type RcEventType = 'rcHead' | 'rcXcmMessageCounter' | 'rcStageUpdate' | 'umpLatency' | 'umpMetrics' | 'umpQueueEvent';
-
-// AH-specific event types
-type AhEventType = 'ahHead' | 'ahXcmMessageCounter' | 'ahStageUpdate' | 'dmpLatency' | 'dmpQueueEvent' | 'dmpMetrics';
-
 interface MigrationStage {
   stage: string;
   details: any;
   blockHash: string;
   timestamp: string;
+  scheduledBlockNumber: number | null;
 }
 
 // LiveTimer component for showing time since last update
@@ -226,8 +221,8 @@ const MigrationStatus: React.FC = () => {
               ? 'Migration completed successfully! All pallets have been migrated.'
               : currentStage.stage === 'Pending'
               ? 'Currently Pending'
-              : currentStage.stage === 'Scheduled' && currentStage.details?.scheduledBlockNumber
-              ? `Scheduled at block ${currentStage.details.scheduledBlockNumber}`
+              : currentStage.stage === 'Scheduled' && currentStage.scheduledBlockNumber
+              ? `Scheduled at block ${currentStage.scheduledBlockNumber}`
               : `Currently migrating ${currentStage.stage}`
             : 'Waiting for migration status updates'
           }

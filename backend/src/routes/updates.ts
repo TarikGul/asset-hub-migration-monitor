@@ -122,6 +122,7 @@ export const updatesHandler: RequestHandler = async (req: Request, res: Response
           palletName: palletName || null,
           palletInitStartedAt: palletInfo?.initStartedAt || null,
           timeInPallet: palletInfo?.timeInPallet || null,
+          scheduledBlockNumber: rcStage.scheduledBlockNumber || null,
           isNewStage: false, // This is initial state, so not a new stage
           isPalletCompleted: palletInfo?.isCompleted || false,
           palletTotalDuration: palletInfo?.totalDuration || null,
