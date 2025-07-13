@@ -4,7 +4,6 @@ import { Log } from "../../logging/Log";
 
 interface DmpEvent {
   timestamp: Date;
-  blockNumber: number;
 }
 
 export class DmpLatencyProcessor {
@@ -24,8 +23,8 @@ export class DmpLatencyProcessor {
   }
 
   // Add fill message sent event
-  public addFillMessageSent(blockNumber: number, timestamp: Date): void {
-    this.fillMessageStack.push({ timestamp, blockNumber });    
+  public addFillMessageSent(timestamp: Date): void {
+    this.fillMessageStack.push({ timestamp });    
     // Keep only the last maxStackSize events
     if (this.fillMessageStack.length > this.maxStackSize) {
       this.fillMessageStack.shift();
@@ -39,8 +38,8 @@ export class DmpLatencyProcessor {
   }
 
   // Add message queue processed event
-  public addMessageQueueProcessed(blockNumber: number, timestamp: Date): void {
-    this.messageQueueStack.push({ timestamp, blockNumber });
+  public addMessageQueueProcessed(timestamp: Date): void {
+    this.messageQueueStack.push({ timestamp });
     
     // Keep only the last maxStackSize events
     if (this.messageQueueStack.length > this.maxStackSize) {
@@ -72,15 +71,13 @@ export class DmpLatencyProcessor {
           latencyMs,
           fillEventTimestamp: firstFillEvent.timestamp.toISOString(),
           queueEventTimestamp: firstQueueEvent.timestamp.toISOString(),
-          fillEventBlockNumber: firstFillEvent.blockNumber,
-          queueEventBlockNumber: firstQueueEvent.blockNumber,
         },
       });
       // Clear the messageQueue stack and wait for the next messageQueue processed event
       this.messageQueueStack.shift();
       return;
     } else {
-      this.emitLatency(latencyMs, firstQueueEvent.blockNumber, firstQueueEvent.timestamp);
+      this.emitLatency(latencyMs, firstQueueEvent.timestamp);
     }
     
     // Remove the matched events
@@ -104,20 +101,18 @@ export class DmpLatencyProcessor {
         details: {
           oldCount,
           latestTimestamp: latestFillEvent.timestamp.toISOString(),
-          latestBlockNumber: latestFillEvent.blockNumber,
         },
       });
     }
   }
 
-  private emitLatency(latencyMs: number, blockNumber: number, timestamp: Date): void {
+  private emitLatency(latencyMs: number, timestamp: Date): void {
     const dmpMetricsCacheInstance = DmpMetricsCache.getInstance();
     dmpMetricsCacheInstance.updateAverageLatency(latencyMs);
 
     eventService.emit('dmpLatency', {
       latencyMs,
       averageLatencyMs: dmpMetricsCacheInstance.getAverageLatencyMs(),
-      blockNumber,
       timestamp: timestamp.toISOString(),
     });
   }
