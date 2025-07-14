@@ -1,7 +1,5 @@
 import '@polkadot/api-augment';
 
-import type { VoidFn } from '@polkadot/api/types';
-
 import cors from 'cors';
 import express, { Request, Response } from 'express';
 
@@ -10,6 +8,7 @@ import { initializeDb } from './db/initializeDb';
 import { Log } from './logging/Log';
 import { updatesHandler } from './routes/updates';
 import { SubscriptionManager } from './util/SubscriptionManager';
+import { RuntimeManager } from './util/RuntimeManager';
 
 const app = express();
 const port = getConfig().port;
@@ -35,7 +34,14 @@ app.use(cors());
 
 // Health check endpoint
 app.get('/health', (_req: Request, res: Response) => {
-  res.json({ status: 'ok' });
+  const runtimeManager = RuntimeManager.getInstance();
+  const subManager = SubscriptionManager.getInstance();
+  
+  res.json({ 
+    status: 'ok',
+    rcMigratorAvailable: runtimeManager.isRcMigratorAvailable(),
+    allSubsInitialized: subManager.allSubsInitialized
+  });
 });
 
 // Consolidated SSE endpoint
@@ -45,8 +51,8 @@ app.get('/api/updates', updatesHandler);
 const main = async () => {
   const subManager = SubscriptionManager.getInstance();
 
-  subManager.initRcPreMigrationService();
-  subManager.checkCurrentMigrationStageInDB();
+  await subManager.initRcPreMigrationService();
+  await subManager.checkCurrentMigrationStageInDB();
 
   // Handle termination signals
   const signals = ['SIGINT', 'SIGTERM', 'SIGQUIT'] as const;
@@ -58,7 +64,7 @@ const main = async () => {
         details: { signal },
       });
 
-      subManager.cleanupAllSubs();
+      await subManager.cleanupAllSubs();
 
 
       server.close(() => {
