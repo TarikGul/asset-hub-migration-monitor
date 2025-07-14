@@ -8,6 +8,7 @@ import { initializeDb } from './db/initializeDb';
 import { Log } from './logging/Log';
 import { updatesHandler } from './routes/updates';
 import { SubscriptionManager } from './util/SubscriptionManager';
+import { RuntimeManager } from './util/RuntimeManager';
 
 const app = express();
 const port = getConfig().port;
@@ -33,7 +34,14 @@ app.use(cors());
 
 // Health check endpoint
 app.get('/health', (_req: Request, res: Response) => {
-  res.json({ status: 'ok' });
+  const runtimeManager = RuntimeManager.getInstance();
+  const subManager = SubscriptionManager.getInstance();
+  
+  res.json({ 
+    status: 'ok',
+    rcMigratorAvailable: runtimeManager.isRcMigratorAvailable(),
+    allSubsInitialized: subManager.allSubsInitialized
+  });
 });
 
 // Consolidated SSE endpoint

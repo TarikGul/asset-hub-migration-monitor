@@ -108,16 +108,23 @@ export class RuntimeManager {
 
   private async startPolling(): Promise<void> {
     let attempt = 0;
-    const maxAttempts = 50;
+    const maxInitialAttempts = 50;
     
     const poll = async () => {
-      if (this.rcMigratorAvailable || attempt >= maxAttempts) {
-        if (attempt >= maxAttempts) {
-          Log.service({
-            service: 'Runtime Manager',
-            action: 'Maximum polling attempts reached, stopping'
-          });
-        }
+      if (this.rcMigratorAvailable) {
+        return;
+      }
+
+      // After max initial attempts, switch to slower polling
+      if (attempt >= maxInitialAttempts) {
+        Log.service({
+          service: 'Runtime Manager',
+          action: 'Maximum initial polling attempts reached, switching to slow polling',
+          details: { nextCheckIn: '1 minute' }
+        });
+        
+        // Poll every minute indefinitely
+        this.pollInterval = setTimeout(poll, 60 * 1000);
         return;
       }
 
