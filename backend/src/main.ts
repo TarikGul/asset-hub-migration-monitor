@@ -1,7 +1,5 @@
 import '@polkadot/api-augment';
 
-import type { VoidFn } from '@polkadot/api/types';
-
 import cors from 'cors';
 import express, { Request, Response } from 'express';
 
@@ -45,8 +43,8 @@ app.get('/api/updates', updatesHandler);
 const main = async () => {
   const subManager = SubscriptionManager.getInstance();
 
-  subManager.initRcPreMigrationService();
-  subManager.checkCurrentMigrationStageInDB();
+  await subManager.initRcPreMigrationService();
+  await subManager.checkCurrentMigrationStageInDB();
 
   // Handle termination signals
   const signals = ['SIGINT', 'SIGTERM', 'SIGQUIT'] as const;
@@ -58,7 +56,7 @@ const main = async () => {
         details: { signal },
       });
 
-      subManager.cleanupAllSubs();
+      await subManager.cleanupAllSubs();
 
 
       server.close(() => {
