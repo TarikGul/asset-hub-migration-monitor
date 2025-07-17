@@ -12,7 +12,7 @@ install:
 
 db:
     #!/usr/bin/env bash
-    cd backend && yarn migrate && yarn push && cd ..
+    cd backend && mkdir data && yarn migrate && yarn push && cd ..
 
 db-clean:
     #!/usr/bin/env bash
